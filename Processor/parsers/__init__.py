@@ -12,5 +12,6 @@ __all__ = [
     "sestatus_command_parser",
     "ps_full_command_parser",
     "netstat_command_parser",
-    "lsmod_command_parser"
+    "lsmod_command_parser",
+    "passwd_file_parser"
     ]

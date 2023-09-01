@@ -190,9 +190,15 @@ def main():
     #write_json_string_to_file(netstat_json, netstat_json_path)
 
     # Execute the lsmod command parser
-    lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
-    lsmod_json_path = os.path.join(paths_dict['output_dir'], 'lsmod_json.json')
-    write_json_string_to_file(lsmod_json, lsmod_json_path)
+    #lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
+    #lsmod_json_path = os.path.join(paths_dict['output_dir'], 'lsmod_json.json')
+    #write_json_string_to_file(lsmod_json, lsmod_json_path)
+
+    # Execute the passwd file parser
+    passwd_file_path = os.path.join(paths_dict['etc_directory'], 'passwd')
+    passwd_json = passwd_file_parser.parse(passwd_file_path)
+    passwd_json_path = os.path.join(paths_dict['output_dir'], 'passwd_json.json')
+    write_json_string_to_file(passwd_json, passwd_json_path)
 
     # Execute sestatus command parser
     #sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])
