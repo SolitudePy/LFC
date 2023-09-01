@@ -36,8 +36,9 @@ def parse(file_path):
         fixed_value_process = values[-1].split('/')
         values[-1] = fixed_value_process[0]
         values.append(fixed_value_process[1])
-        process_info = dict(zip(headers, values))
-        parser.data.append(process_info)
+        
+        socket_info = dict(zip(headers, values))
+        parser.data.append(socket_info)
     json_data = parser.to_json()
 
     return json_data

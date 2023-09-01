@@ -180,14 +180,19 @@ def main():
     #write_json_string_to_file(procfs_json, procfs_json_path)
 
     # Execute ps command parser
-    ps_full_json = ps_full_command_parser.parse(paths_dict['process_list_full_file'])
-    ps_full_json_path = os.path.join(paths_dict['output_dir'], 'ps_full_json.json')
-    write_json_string_to_file(ps_full_json, ps_full_json_path)
+    #ps_full_json = ps_full_command_parser.parse(paths_dict['process_list_full_file'])
+    #ps_full_json_path = os.path.join(paths_dict['output_dir'], 'ps_full_json.json')
+    #write_json_string_to_file(ps_full_json, ps_full_json_path)
 
     # Execute the netstat command parser
     #netstat_json = netstat_command_parser.parse(paths_dict['netstat_file'])
     #netstat_json_path = os.path.join(paths_dict['output_dir'], 'netstat_json.json')
     #write_json_string_to_file(netstat_json, netstat_json_path)
+
+    # Execute the lsmod command parser
+    lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
+    lsmod_json_path = os.path.join(paths_dict['output_dir'], 'lsmod_json.json')
+    write_json_string_to_file(lsmod_json, lsmod_json_path)
 
     # Execute sestatus command parser
     #sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])
