@@ -200,6 +200,18 @@ def main():
     passwd_json_path = os.path.join(paths_dict['output_dir'], 'passwd_json.json')
     write_json_string_to_file(passwd_json, passwd_json_path)
 
+    # Execute the group file parser
+    group_file_path = os.path.join(paths_dict['etc_directory'], 'group')
+    group_json = group_file_parser.parse(group_file_path)
+    group_json_path = os.path.join(paths_dict['output_dir'], 'group_json.json')
+    write_json_string_to_file(group_json, group_json_path)
+
+    # Execute the hosts file parser
+    hosts_file_path = os.path.join(paths_dict['etc_directory'], 'hosts')
+    hosts_json = hosts_file_parser.parse(hosts_file_path)
+    hosts_json_path = os.path.join(paths_dict['output_dir'], 'hosts_json.json')
+    write_json_string_to_file(hosts_json, hosts_json_path)
+
     # Execute sestatus command parser
     #sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])
     #sestatus_json_path = os.path.join(paths_dict['output_dir'], 'sestatus_json.json')

@@ -13,5 +13,7 @@ __all__ = [
     "ps_full_command_parser",
     "netstat_command_parser",
     "lsmod_command_parser",
-    "passwd_file_parser"
+    "passwd_file_parser",
+    "group_file_parser",
+    "hosts_file_parser"
     ]

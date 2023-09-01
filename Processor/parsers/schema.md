@@ -4,6 +4,12 @@
 # Defines the user name.
 [user_name]
 
+# Defines the group id.
+[group_id]
+
+# Defines thr group name.
+[group_name]
+
 # Defines the process command line that was executed.
 [cmd_line]
 
