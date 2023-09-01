@@ -1,0 +1,29 @@
+# Defines the user id.
+[user_id]
+
+# Defines the user name.
+[user_name]
+
+# Defines the process command line that was executed.
+[cmd_line]
+
+# Defines the process id.
+[pid]
+
+# Defines the parent process id.
+[ppid]
+
+# Defines the process name.
+[process_name]
+
+# Defines the executable sha256 hash.
+[exe_sha256]
+
+# Defines the source socket.
+[src_socket]
+
+# Defines the destination socket.
+[dest_socket]
+
+# Defines the kernel module name.
+[module_name]
