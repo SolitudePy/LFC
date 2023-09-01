@@ -14,7 +14,7 @@ def parse(file_path):
         if line.strip() and not line.startswith("#"):
             values = line.split()
             if len(values) > 2:
-                values[2::] = [''.join(values[2::])]
+                values[2::] = [values[2::]]
             hosts_info = dict(zip(headers, values))
             parser.data.append(hosts_info)
     json_data = parser.to_json()
