@@ -11,7 +11,9 @@ def parse(file_path):
 
     # Fix headers
     headers[0] = "module_name"
-    headers = parser.list_to_lower(headers)
+    headers[1] = "size_bytes"
+    headers[2] = "instance_num"
+    headers[3] = "dependencies"
 
     for line in lines[1:]:
         values = line.split()

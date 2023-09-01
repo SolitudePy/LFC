@@ -212,6 +212,18 @@ def main():
     hosts_json_path = os.path.join(paths_dict['output_dir'], 'hosts_json.json')
     write_json_string_to_file(hosts_json, hosts_json_path)
 
+    # Execute the resolv file parser
+    resolv_file_path = os.path.join(paths_dict['etc_directory'], 'resolv.conf')
+    resolv_json = resolv_file_parser.parse(resolv_file_path)
+    resolv_json_path = os.path.join(paths_dict['output_dir'], 'resolv_json.json')
+    write_json_string_to_file(resolv_json, resolv_json_path)
+
+    # Execute the modules file parser
+    modules_file_path = os.path.join(paths_dict['proc_directory'], 'modules')
+    modules_json = modules_file_parser.parse(modules_file_path)
+    modules_json_path = os.path.join(paths_dict['output_dir'], 'modules_json.json')
+    write_json_string_to_file(modules_json, modules_json_path)
+
     # Execute sestatus command parser
     #sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])
     #sestatus_json_path = os.path.join(paths_dict['output_dir'], 'sestatus_json.json')

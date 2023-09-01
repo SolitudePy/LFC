@@ -15,5 +15,7 @@ __all__ = [
     "lsmod_command_parser",
     "passwd_file_parser",
     "group_file_parser",
-    "hosts_file_parser"
+    "hosts_file_parser",
+    "resolv_file_parser",
+    "modules_file_parser"
     ]

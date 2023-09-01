@@ -33,3 +33,9 @@
 
 # Defines the kernel module name.
 [module_name]
+
+# Defines the size in bytes.
+[size_bytes]
+
+# Defines instances number.
+[instance_num]
