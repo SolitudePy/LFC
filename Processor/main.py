@@ -202,10 +202,16 @@ def main():
     lsusb_json_path = os.path.join(paths_dict['output_dir'], 'lsusb_json.json')
     write_json_string_to_file(lsusb_json, lsusb_json_path)
 
-    # Execute the lsusb command parser
+    # User Analysis parsers
+    # Execute the lastlog command parser
     lastlog_json = lastlog_command_parser.parse(paths_dict['lastlog_file'])
     lastlog_json_path = os.path.join(paths_dict['output_dir'], 'lastlog_json.json')
     write_json_string_to_file(lastlog_json, lastlog_json_path)
+
+    # Execute the lastlog command parser
+    w_json = w_command_parser.parse(paths_dict['w_file'])
+    w_json_path = os.path.join(paths_dict['output_dir'], 'sessions_json.json')
+    write_json_string_to_file(w_json, w_json_path)
 
     # File Analysis parsers
     # Execute the recent modified files parser
