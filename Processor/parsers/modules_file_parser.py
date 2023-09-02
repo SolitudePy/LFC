@@ -14,8 +14,8 @@ def parse(file_path):
     for line in lines:
         if line.strip():
             values = line.split()
-            print(values)
-            # For some reason it also ends with a ,
+
+            # For some reason it also ends with a comma.
             values[3] = values[3].strip(',').split(',')
             module_info = dict(zip(headers, values))
             parser.data.append(module_info)

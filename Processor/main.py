@@ -49,7 +49,7 @@ def process_configuration_file(config_file_path):
     # User Analysis
     user_base_dir = os.path.join(base_dir, config_data['user_analysis']['base_directory'])
     last_file = os.path.join(user_base_dir, config_data['user_analysis']['last_file'])
-    lastlog = os.path.join(user_base_dir, config_data['user_analysis']['lastlog'])
+    lastlog_file = os.path.join(user_base_dir, config_data['user_analysis']['lastlog_file'])
     w_file = os.path.join(user_base_dir, config_data['user_analysis']['w_file'])
     who_file = os.path.join(user_base_dir, config_data['user_analysis']['who_file'])
 
@@ -99,7 +99,7 @@ def process_configuration_file(config_file_path):
         'ss_file': ss_file,
         'ss_full_file': ss_full_file,
         'last_file': last_file,
-        'lastlog': lastlog,
+        'lastlog_file': lastlog_file,
         'w_file': w_file,
         'who_file': who_file,
         'date_file': date_file,
@@ -175,24 +175,34 @@ def main():
     paths_dict = process_configuration_file(app_config_file_path)
     
     # Execute procfs parser
-    #procfs_json = procfs_parser.parse(paths_dict['proc_directory'])
-    #procfs_json_path = os.path.join(paths_dict['output_dir'], 'procfs_json.json')
-    #write_json_string_to_file(procfs_json, procfs_json_path)
+    procfs_json = procfs_parser.parse(paths_dict['proc_directory'])
+    procfs_json_path = os.path.join(paths_dict['output_dir'], 'procfs_json.json')
+    write_json_string_to_file(procfs_json, procfs_json_path)
 
     # Execute ps command parser
-    #ps_full_json = ps_full_command_parser.parse(paths_dict['process_list_full_file'])
-    #ps_full_json_path = os.path.join(paths_dict['output_dir'], 'ps_full_json.json')
-    #write_json_string_to_file(ps_full_json, ps_full_json_path)
+    ps_full_json = ps_full_command_parser.parse(paths_dict['process_list_full_file'])
+    ps_full_json_path = os.path.join(paths_dict['output_dir'], 'ps_full_json.json')
+    write_json_string_to_file(ps_full_json, ps_full_json_path)
 
     # Execute the netstat command parser
-    #netstat_json = netstat_command_parser.parse(paths_dict['netstat_file'])
-    #netstat_json_path = os.path.join(paths_dict['output_dir'], 'netstat_json.json')
-    #write_json_string_to_file(netstat_json, netstat_json_path)
+    netstat_json = netstat_command_parser.parse(paths_dict['netstat_file'])
+    netstat_json_path = os.path.join(paths_dict['output_dir'], 'netstat_json.json')
+    write_json_string_to_file(netstat_json, netstat_json_path)
 
     # Execute the lsmod command parser
-    #lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
-    #lsmod_json_path = os.path.join(paths_dict['output_dir'], 'lsmod_json.json')
-    #write_json_string_to_file(lsmod_json, lsmod_json_path)
+    lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
+    lsmod_json_path = os.path.join(paths_dict['output_dir'], 'lsmod_json.json')
+    write_json_string_to_file(lsmod_json, lsmod_json_path)
+
+    # Execute the lsusb command parser
+    lsusb_json = lsusb_command_parser.parse(paths_dict['lsusb_file'])
+    lsusb_json_path = os.path.join(paths_dict['output_dir'], 'lsusb_json.json')
+    write_json_string_to_file(lsusb_json, lsusb_json_path)
+
+    # Execute the lsusb command parser
+    lastlog_json = lastlog_command_parser.parse(paths_dict['lastlog_file'])
+    lastlog_json_path = os.path.join(paths_dict['output_dir'], 'lastlog_json.json')
+    write_json_string_to_file(lastlog_json, lastlog_json_path)
 
     # Execute the passwd file parser
     passwd_file_path = os.path.join(paths_dict['etc_directory'], 'passwd')
@@ -223,6 +233,18 @@ def main():
     modules_json = modules_file_parser.parse(modules_file_path)
     modules_json_path = os.path.join(paths_dict['output_dir'], 'modules_json.json')
     write_json_string_to_file(modules_json, modules_json_path)
+
+    # Execute the recent modified files parser
+    recent_modified_files_path = os.path.join(paths_dict['recent_modified_files_file'])
+    recent_modified_files_json = recent_modified_files_parser.parse(recent_modified_files_path)
+    recent_modified_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_modified_files_json.json')
+    write_json_string_to_file(recent_modified_files_json, recent_modified_files_json_path)
+
+    # Execute the recent accessed files parser
+    recent_accessed_files_path = os.path.join(paths_dict['recent_accessed_files_file'])
+    recent_accessed_files_json = recent_accessed_files_parser.parse(recent_accessed_files_path)
+    recent_accessed_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_accessed_files_json.json')
+    write_json_string_to_file(recent_accessed_files_json, recent_accessed_files_json_path)
 
     # Execute sestatus command parser
     #sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])

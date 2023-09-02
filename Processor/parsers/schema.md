@@ -39,3 +39,24 @@
 
 # Defines instances number.
 [instance_num]
+
+# Defines the file path.
+[file_path]
+
+# Defines the file name.
+[file_name]
+
+# Defines the file modified time.
+[modified_time]
+
+# Defines the file accessed time.
+[accessed_time]
+
+# Defines the device vendor id.
+[vendor_id]
+
+# Defines the device product id.
+[product_id]
+
+# Defines the device information.
+[device_info]

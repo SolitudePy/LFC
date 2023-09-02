@@ -306,7 +306,7 @@ echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Filesystem Information Acqui
 mkdir -p "$FILE_ANALYSIS_DIR"
 ## Run these commands to collect information about files
 find / -type f -not -path "/proc/*" -not -path "/sys/*" -mmin -$((recent_modified_files_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_modified_files.txt"
-find / -type f -not -path "/proc/*" -not -path "/sys/*" -amin -$((recent_read_files_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_accessed_files.txt"
+find / -type f -not -path "/proc/*" -not -path "/sys/*" -amin -$((recent_read_files_threshold * 60)) -printf "%AY-%Am-%Ad %AH:%AM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_accessed_files.txt"
 find / -type f -executable -mmin -$((recent_modified_executables_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_executable_files.txt"
 lsof > "$FILE_ANALYSIS_DIR/open_files.txt"
 create_file_if_output_not_empty "find / -type d -name '\.*'" "$FILE_ANALYSIS_DIR/hidden_directories.txt"

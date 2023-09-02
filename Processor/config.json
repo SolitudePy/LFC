@@ -48,7 +48,7 @@
     "user_analysis": {
         "base_directory": "User_Analysis",
         "last_file": "last.txt",
-        "lastlog": "lastlog.txt",
+        "lastlog_file": "lastlog.txt",
         "w_file": "w.txt",
         "who_file": "who.txt"
     },
