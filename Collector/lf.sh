@@ -5,6 +5,7 @@ START_TIME=$(date +%s)
 
 # Constant Variables
 OUTPUT_DIR="/tmp/result"
+ZIP_DIR="/tmp"
 LOGFILE="$OUTPUT_DIR/log_file.log"
 SYSTEM_ANALYSIS="$OUTPUT_DIR/System_Analysis"
 AV_ANALYSIS_DIR="$OUTPUT_DIR/AV_Analysis"
@@ -345,3 +346,9 @@ END_TIME=$(date +%s)
 # Execution time
 ELAPSED_TIME=$((END_TIME - START_TIME))
 echo "$(date +"%Y-%m-%d %H:%M:%S") - Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR." >> "$LOGFILE"
+
+# zip output directory -v is for verbose
+tar -czvf "$ZIP_DIR/results.tar.gz" "$OUTPUT_DIR"
+
+# Delete uncompressed output directory
+rm -rf "$OUTPUT_DIR"

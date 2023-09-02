@@ -174,6 +174,11 @@ def main():
     app_config_file_path = os.path.join(module_path, app_config_file_name)
     paths_dict = process_configuration_file(app_config_file_path)
     
+    if not os.path.exists(paths_dict['output_dir']):
+        logger.error(f"Output directory {paths_dict['output_dir']} does not exist, Creating...")
+        os.mkdir(paths_dict['output_dir'])
+        logger.info(f"Successfully created {paths_dict['output_dir']}")
+
     # Process Analysis parsers
     # Execute procfs parser
     procfs_json = procfs_parser.parse(paths_dict['proc_directory'])
