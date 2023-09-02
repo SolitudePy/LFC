@@ -20,6 +20,7 @@ __all__ = [
     "hosts_file_parser",
     "resolv_file_parser",
     "modules_file_parser",
+    "history_files_parser",
     "recent_modified_files_parser",
     "recent_accessed_files_parser"
     ]
