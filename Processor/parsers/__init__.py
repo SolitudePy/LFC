@@ -14,6 +14,7 @@ __all__ = [
     "netstat_command_parser",
     "lsmod_command_parser",
     "lsusb_command_parser",
+    "lsof_command_parser",
     "lastlog_command_parser",
     "w_command_parser",
     "passwd_file_parser",

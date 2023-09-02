@@ -229,6 +229,12 @@ def main():
     recent_modified_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_modified_files_json.json')
     write_json_string_to_file(recent_modified_files_json, recent_modified_files_json_path)
 
+    # Execute the open files parser
+    open_files_path = os.path.join(paths_dict['open_files_file'])
+    open_files_json = lsof_command_parser.parse(open_files_path)
+    open_files_json_json = os.path.join(paths_dict['output_dir'], 'open_files_json.json')
+    write_json_string_to_file(open_files_json, open_files_json_json)
+
     # Execute the recent accessed files parser
     recent_accessed_files_path = os.path.join(paths_dict['recent_accessed_files_file'])
     recent_accessed_files_json = recent_accessed_files_parser.parse(recent_accessed_files_path)
