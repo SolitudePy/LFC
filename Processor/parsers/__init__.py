@@ -23,5 +23,7 @@ __all__ = [
     "modules_file_parser",
     "history_files_parser",
     "recent_modified_files_parser",
-    "recent_accessed_files_parser"
+    "recent_accessed_files_parser",
+    "recent_modified_executable_files_parser",
+    "executable_files_sha256_parser"
     ]

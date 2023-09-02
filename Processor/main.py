@@ -34,6 +34,8 @@ def process_configuration_file(config_file_path):
     open_files_file = os.path.join(file_base_dir, config_data['file_analysis']['open_files_file'])
     recent_accessed_files_file = os.path.join(file_base_dir, config_data['file_analysis']['recent_accessed_files_file'])
     recent_modified_files_file = os.path.join(file_base_dir, config_data['file_analysis']['recent_modified_files_file'])
+    recent_modified_executable_files_file = os.path.join(file_base_dir, config_data['file_analysis']['recent_modified_executable_files_file'])
+    executable_files_sha256_file = os.path.join(file_base_dir, config_data['file_analysis']['executable_files_sha256_file'])
     hidden_directories_file = os.path.join(file_base_dir, config_data['file_analysis']['hidden_directories_file'])
 
     # Network Analysis
@@ -90,6 +92,8 @@ def process_configuration_file(config_file_path):
         'open_files_file': open_files_file,
         'recent_accessed_files_file': recent_accessed_files_file,
         'recent_modified_files_file': recent_modified_files_file,
+        'recent_modified_executable_files_file': recent_modified_executable_files_file,
+        'executable_files_sha256_file': executable_files_sha256_file,
         'hidden_directories_file': hidden_directories_file,
         'arp_cache_file': arp_cache_file,
         'ifconfig_file': ifconfig_file,
@@ -231,6 +235,18 @@ def main():
     recent_accessed_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_accessed_files_json.json')
     write_json_string_to_file(recent_accessed_files_json, recent_accessed_files_json_path)
 
+    # Execute the recent modified executable files parser
+    recent_modified_executable_files_path = os.path.join(paths_dict['recent_modified_executable_files_file'])
+    recent_modified_executable_files_json = recent_modified_executable_files_parser.parse(recent_modified_executable_files_path)
+    recent_modified_executable_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_modified_executable_files_json.json')
+    write_json_string_to_file(recent_modified_executable_files_json, recent_modified_executable_files_json_path)
+
+    # Execute the executable files sha256 parser
+    executable_files_sha256_path = os.path.join(paths_dict['executable_files_sha256_file'])
+    executable_files_sha256_json = executable_files_sha256_parser.parse(executable_files_sha256_path)
+    executable_files_sha256_json_path = os.path.join(paths_dict['output_dir'], 'executable_files_sha256.json')
+    write_json_string_to_file(executable_files_sha256_json, executable_files_sha256_json_path)
+    
     # AV Analysis parsers
     # Execute sestatus command parser
     sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])

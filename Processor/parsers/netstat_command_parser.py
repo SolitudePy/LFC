@@ -22,7 +22,6 @@ def parse(file_path):
     headers[3] = "src_socket"
     headers[4] = "dest_socket"
     headers = parser.list_to_lower(headers)
-    print(headers)
 
     for line in lines[2:]:
         values = line.split(None, len(headers) - 2)

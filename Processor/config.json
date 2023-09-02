@@ -28,6 +28,8 @@
         "open_files_file": "open_files.txt",
         "recent_accessed_files_file": "recent_accessed_files.txt",
         "recent_modified_files_file": "recent_modified_files.txt",
+        "recent_modified_executable_files_file": "recent_modified_executable_files.txt",
+        "executable_files_sha256_file": "executable_files_sha256.txt",
         "hidden_directories_file": "hidden_directories.txt"
     },
     "network_analysis": {
