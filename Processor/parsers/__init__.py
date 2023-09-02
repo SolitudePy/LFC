@@ -10,6 +10,8 @@ __all__ variable includes all filenames
 __all__ = [
     "procfs_parser", 
     "sestatus_command_parser",
+    "hostnamectl_command_parser",
+    "timedatectl_command_parser",
     "ps_full_command_parser",
     "netstat_command_parser",
     "lsmod_command_parser",

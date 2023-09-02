@@ -211,6 +211,16 @@ def main():
     lsusb_json_path = os.path.join(paths_dict['output_dir'], 'lsusb_json.json')
     write_json_string_to_file(lsusb_json, lsusb_json_path)
 
+    # Execute the hostnamectl command parser
+    hostnamectl_json = hostnamectl_command_parser.parse(paths_dict['hostnamectl_file'])
+    hostnamectl_json_path = os.path.join(paths_dict['output_dir'], 'hostnamectl_json.json')
+    write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
+
+    # Execute the timedatectl command parser
+    timedatectl_json = timedatectl_command_parser.parse(paths_dict['timedatectl_file'])
+    timedatectl_json_path = os.path.join(paths_dict['output_dir'], 'timedatectl_json.json')
+    write_json_string_to_file(timedatectl_json, timedatectl_json_path)
+
     # User Analysis parsers
     # Execute the lastlog command parser
     lastlog_json = lastlog_command_parser.parse(paths_dict['lastlog_file'])
