@@ -6,7 +6,8 @@ class Parser:
         self.data = []
 
     def read_file(self, file_path):
-        with open(file_path, 'r') as file:
+        enc = "utf-8"
+        with open(file_path, 'r', encoding=enc) as file:
             content = file.read()
         return content
 

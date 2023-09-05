@@ -155,6 +155,95 @@ def write_json_string_to_file(json_string, file_path):
         logging.error("Error writing output to file: %s", str(e))
 
 
+def execute_system_analysis_parsers():
+    """
+    Execute all of the system analysis type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+    pass
+
+
+def execute_process_analysis_parsers():
+    """
+    Execute all of the process analysis type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+    pass
+
+
+def execute_network_analysis_parsers():
+    """
+    Execute all of the network analysis type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+    pass
+
+
+def execute_file_analysis_parsers():
+    """
+    Execute all of the file analysis type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+    pass
+
+
+def execute_user_analysis_parsers():
+    """
+    Execute all of the user analysis type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+    pass
+
+
+def execute_av_analysis_parsers():
+    """
+    Execute all of the av analysis type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+    pass
+
 
 def main():
     # Get the absolute path to the module
@@ -217,6 +306,11 @@ def main():
     write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
 
     # Execute the timedatectl command parser
+    services_units_json = systemctl_units_command_parser.parse(paths_dict['services_units_file'])
+    services_units_json_path = os.path.join(paths_dict['output_dir'], 'services_units_json.json')
+    write_json_string_to_file(services_units_json, services_units_json_path)
+
+    # Execute the systemctl list-units command parser
     timedatectl_json = timedatectl_command_parser.parse(paths_dict['timedatectl_file'])
     timedatectl_json_path = os.path.join(paths_dict['output_dir'], 'timedatectl_json.json')
     write_json_string_to_file(timedatectl_json, timedatectl_json_path)
@@ -260,7 +354,7 @@ def main():
     # Execute the executable files sha256 parser
     executable_files_sha256_path = os.path.join(paths_dict['executable_files_sha256_file'])
     executable_files_sha256_json = executable_files_sha256_parser.parse(executable_files_sha256_path)
-    executable_files_sha256_json_path = os.path.join(paths_dict['output_dir'], 'executable_files_sha256.json')
+    executable_files_sha256_json_path = os.path.join(paths_dict['output_dir'], 'executable_files_sha256_json.json')
     write_json_string_to_file(executable_files_sha256_json, executable_files_sha256_json_path)
     
     # AV Analysis parsers
