@@ -306,7 +306,7 @@ def main():
     write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
 
     # Execute the timedatectl command parser
-    services_units_json = systemctl_units_command_parser.parse(paths_dict['services_units_file'])
+    services_units_json = systemctl_service_units_command_parser.parse(paths_dict['services_units_file'])
     services_units_json_path = os.path.join(paths_dict['output_dir'], 'services_units_json.json')
     write_json_string_to_file(services_units_json, services_units_json_path)
 

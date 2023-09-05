@@ -19,7 +19,7 @@ __all__ = [
     "lsof_command_parser",
     "lastlog_command_parser",
     "w_command_parser",
-    "systemctl_units_command_parser",
+    "systemctl_service_units_command_parser",
     "passwd_file_parser",
     "group_file_parser",
     "hosts_file_parser",
