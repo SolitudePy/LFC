@@ -13,7 +13,9 @@ def parse(base_dir):
             if filename.endswith('_history') or filename == '.history':
                 filepath = os.path.join(root, filename)
                 username = os.path.basename(root)
-                with open(filepath, 'r') as file:
+
+                enc = "utf-8"
+                with open(filepath, 'r', encoding=enc) as file:
                     commands = file.read().splitlines()
                     for command in commands:
 

@@ -32,10 +32,16 @@ def parse(file_path):
         
         # Done to seperate pid/programname
         values[-1] = values[-1].strip()
-        fixed_value_process = values[-1].split('/')
-        values[-1] = fixed_value_process[0]
-        values.append(fixed_value_process[1])
-        
+        kernel_thread = "-"
+
+        # checks if pid does not exist, usually kernel threads
+        if values[-1] != kernel_thread:
+            fixed_value_process = values[-1].split('/')
+            values[-1] = fixed_value_process[0]
+            values.append(fixed_value_process[1])
+        else:
+            values[-1] = kernel_thread
+            values.append(kernel_thread)
         socket_info = dict(zip(headers, values))
         parser.data.append(socket_info)
     json_data = parser.to_json()
