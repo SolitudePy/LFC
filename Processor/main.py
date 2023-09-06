@@ -305,10 +305,15 @@ def main():
     hostnamectl_json_path = os.path.join(paths_dict['output_dir'], 'hostnamectl_json.json')
     write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
 
-    # Execute the timedatectl command parser
+    # Execute the systemctl service units command parser
     services_units_json = systemctl_service_units_command_parser.parse(paths_dict['services_units_file'])
     services_units_json_path = os.path.join(paths_dict['output_dir'], 'services_units_json.json')
     write_json_string_to_file(services_units_json, services_units_json_path)
+
+    # Execute the systemctl timer units command parser
+    timer_units_json = systemctl_timer_units_command_parser.parse(paths_dict['timer_units_file'])
+    timer_units_json_path = os.path.join(paths_dict['output_dir'], 'timer_units_json.json')
+    write_json_string_to_file(timer_units_json, timer_units_json_path)
 
     # Execute the systemctl list-units command parser
     timedatectl_json = timedatectl_command_parser.parse(paths_dict['timedatectl_file'])
