@@ -8,6 +8,7 @@ import logging.config
 app_config_file_name = "config.json"
 logging_config_file_name = "logging_config.ini"
 
+
 def process_configuration_file(config_file_path):
     """
     Load the configuration file and extract the paths.
@@ -155,7 +156,7 @@ def write_json_string_to_file(json_string, file_path):
         logging.error("Error writing output to file: %s", str(e))
 
 
-def execute_system_analysis_parsers():
+def execute_system_analysis_parsers(paths_dict, output_dir):
     """
     Execute all of the system analysis type parsers.
 
@@ -167,10 +168,39 @@ def execute_system_analysis_parsers():
     Returns:
         None
     """
-    pass
+
+    # Execute the lsmod command parser
+    lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
+    lsmod_json_path = os.path.join(output_dir, 'lsmod_json.json')
+    write_json_string_to_file(lsmod_json, lsmod_json_path)
+
+    # Execute the lsusb command parser
+    lsusb_json = lsusb_command_parser.parse(paths_dict['lsusb_file'])
+    lsusb_json_path = os.path.join(output_dir, 'lsusb_json.json')
+    write_json_string_to_file(lsusb_json, lsusb_json_path)
+
+    # Execute the hostnamectl command parser
+    hostnamectl_json = hostnamectl_command_parser.parse(paths_dict['hostnamectl_file'])
+    hostnamectl_json_path = os.path.join(output_dir, 'hostnamectl_json.json')
+    write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
+
+    # Execute the systemctl service units command parser
+    services_units_json = systemctl_service_units_command_parser.parse(paths_dict['services_units_file'])
+    services_units_json_path = os.path.join(output_dir, 'services_units_json.json')
+    write_json_string_to_file(services_units_json, services_units_json_path)
+
+    # Execute the systemctl timer units command parser
+    timer_units_json = systemctl_timer_units_command_parser.parse(paths_dict['timer_units_file'])
+    timer_units_json_path = os.path.join(output_dir, 'timer_units_json.json')
+    write_json_string_to_file(timer_units_json, timer_units_json_path)
+
+    # Execute the systemctl list-units command parser
+    timedatectl_json = timedatectl_command_parser.parse(paths_dict['timedatectl_file'])
+    timedatectl_json_path = os.path.join(output_dir, 'timedatectl_json.json')
+    write_json_string_to_file(timedatectl_json, timedatectl_json_path)
 
 
-def execute_process_analysis_parsers():
+def execute_process_analysis_parsers(paths_dict, output_dir):
     """
     Execute all of the process analysis type parsers.
 
@@ -182,10 +212,19 @@ def execute_process_analysis_parsers():
     Returns:
         None
     """
-    pass
+
+    # Execute procfs parser
+    procfs_json = procfs_parser.parse(paths_dict['proc_directory'])
+    procfs_json_path = os.path.join(output_dir, 'procfs_json.json')
+    write_json_string_to_file(procfs_json, procfs_json_path)
+
+    # Execute ps command parser
+    ps_full_json = ps_full_command_parser.parse(paths_dict['process_list_full_file'])
+    ps_full_json_path = os.path.join(output_dir, 'ps_full_json.json')
+    write_json_string_to_file(ps_full_json, ps_full_json_path)
 
 
-def execute_network_analysis_parsers():
+def execute_network_analysis_parsers(paths_dict, output_dir):
     """
     Execute all of the network analysis type parsers.
 
@@ -197,10 +236,14 @@ def execute_network_analysis_parsers():
     Returns:
         None
     """
-    pass
+
+    # Execute the netstat command parser
+    netstat_json = netstat_command_parser.parse(paths_dict['netstat_file'])
+    netstat_json_path = os.path.join(output_dir, 'netstat_json.json')
+    write_json_string_to_file(netstat_json, netstat_json_path)
 
 
-def execute_file_analysis_parsers():
+def execute_file_analysis_parsers(paths_dict, output_dir):
     """
     Execute all of the file analysis type parsers.
 
@@ -212,10 +255,39 @@ def execute_file_analysis_parsers():
     Returns:
         None
     """
-    pass
+
+    # Execute the recent modified files parser
+    recent_modified_files_path = os.path.join(paths_dict['recent_modified_files_file'])
+    recent_modified_files_json = recent_modified_files_parser.parse(recent_modified_files_path)
+    recent_modified_files_json_path = os.path.join(output_dir, 'recent_modified_files_json.json')
+    write_json_string_to_file(recent_modified_files_json, recent_modified_files_json_path)
+
+    # Execute the open files parser
+    open_files_path = os.path.join(paths_dict['open_files_file'])
+    open_files_json = lsof_command_parser.parse(open_files_path)
+    open_files_json_json = os.path.join(output_dir, 'open_files_json.json')
+    write_json_string_to_file(open_files_json, open_files_json_json)
+
+    # Execute the recent accessed files parser
+    recent_accessed_files_path = os.path.join(paths_dict['recent_accessed_files_file'])
+    recent_accessed_files_json = recent_accessed_files_parser.parse(recent_accessed_files_path)
+    recent_accessed_files_json_path = os.path.join(output_dir, 'recent_accessed_files_json.json')
+    write_json_string_to_file(recent_accessed_files_json, recent_accessed_files_json_path)
+
+    # Execute the recent modified executable files parser
+    recent_modified_executable_files_path = os.path.join(paths_dict['recent_modified_executable_files_file'])
+    recent_modified_executable_files_json = recent_modified_executable_files_parser.parse(recent_modified_executable_files_path)
+    recent_modified_executable_files_json_path = os.path.join(output_dir, 'recent_modified_executable_files_json.json')
+    write_json_string_to_file(recent_modified_executable_files_json, recent_modified_executable_files_json_path)
+
+    # Execute the executable files sha256 parser
+    executable_files_sha256_path = os.path.join(paths_dict['executable_files_sha256_file'])
+    executable_files_sha256_json = executable_files_sha256_parser.parse(executable_files_sha256_path)
+    executable_files_sha256_json_path = os.path.join(output_dir, 'executable_files_sha256_json.json')
+    write_json_string_to_file(executable_files_sha256_json, executable_files_sha256_json_path)
 
 
-def execute_user_analysis_parsers():
+def execute_user_analysis_parsers(paths_dict, output_dir):
     """
     Execute all of the user analysis type parsers.
 
@@ -227,10 +299,19 @@ def execute_user_analysis_parsers():
     Returns:
         None
     """
-    pass
+    
+    # Execute the lastlog command parser
+    lastlog_json = lastlog_command_parser.parse(paths_dict['lastlog_file'])
+    lastlog_json_path = os.path.join(output_dir, 'lastlog_json.json')
+    write_json_string_to_file(lastlog_json, lastlog_json_path)
+
+    # Execute the lastlog command parser
+    w_json = w_command_parser.parse(paths_dict['w_file'])
+    w_json_path = os.path.join(output_dir, 'sessions_json.json')
+    write_json_string_to_file(w_json, w_json_path)
 
 
-def execute_av_analysis_parsers():
+def execute_av_analysis_parsers(paths_dict, output_dir):
     """
     Execute all of the av analysis type parsers.
 
@@ -242,15 +323,95 @@ def execute_av_analysis_parsers():
     Returns:
         None
     """
-    pass
 
+    # Execute sestatus command parser
+    sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])
+    sestatus_json_path = os.path.join(output_dir, 'sestatus_json.json')
+    write_json_string_to_file(sestatus_json, sestatus_json_path)
+
+
+def execute_custom_parsers(paths_dict, output_dir):
+    """
+    Execute all of the custom type parsers.
+
+    Args:
+        paths_dict (dict): A dictionary that consists of full paths to output text files.
+
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+
+    # Execute the history files parser
+    cmd_history_json = history_files_parser.parse(paths_dict['base_dir'])
+    cmd_history_json_path = os.path.join(output_dir, 'cmd_history_json.json')
+    write_json_string_to_file(cmd_history_json, cmd_history_json_path)
+
+    # Execute the modules file parser
+    modules_file_path = os.path.join(paths_dict['proc_directory'], 'modules')
+    modules_json = modules_file_parser.parse(modules_file_path)
+    modules_json_path = os.path.join(output_dir, 'modules_json.json')
+    write_json_string_to_file(modules_json, modules_json_path)
+
+    # Execute the passwd file parser
+    passwd_file_path = os.path.join(paths_dict['etc_directory'], 'passwd')
+    passwd_json = passwd_file_parser.parse(passwd_file_path)
+    passwd_json_path = os.path.join(output_dir, 'passwd_json.json')
+    write_json_string_to_file(passwd_json, passwd_json_path)
+
+    # Execute the group file parser
+    group_file_path = os.path.join(paths_dict['etc_directory'], 'group')
+    group_json = group_file_parser.parse(group_file_path)
+    group_json_path = os.path.join(output_dir, 'group_json.json')
+    write_json_string_to_file(group_json, group_json_path)
+
+    # Execute the hosts file parser
+    hosts_file_path = os.path.join(paths_dict['etc_directory'], 'hosts')
+    hosts_json = hosts_file_parser.parse(hosts_file_path)
+    hosts_json_path = os.path.join(output_dir, 'hosts_json.json')
+    write_json_string_to_file(hosts_json, hosts_json_path)
+
+    # Execute the resolv file parser
+    resolv_file_path = os.path.join(paths_dict['etc_directory'], 'resolv.conf')
+    resolv_json = resolv_file_parser.parse(resolv_file_path)
+    resolv_json_path = os.path.join(output_dir, 'resolv_json.json')
+    write_json_string_to_file(resolv_json, resolv_json_path)
+
+
+def check_output_files(output_dir):
+    """
+    Checks if output directory contains empty files
+
+    Args:
+        output_dir (str): The full path for the output directory.
+
+    Returns:
+        None
+    """
+
+    # Loop through the files in the output directory
+    for filename in os.listdir(output_dir):
+        file_path = os.path.join(output_dir, filename)
+
+        # Check if it's a file (not a directory)
+        if os.path.isfile(file_path):
+
+            # Check if the file is empty
+            if os.path.getsize(file_path) == 0:
+
+                # Open the file in write mode and write "error" to it
+                with open(file_path, 'w') as output_file:
+                    output_file.write("Could not write to output to file, please check error logs.")
+ 
 
 def main():
+
     # Get the absolute path to the module
     module_path = os.path.abspath(os.path.dirname(__file__))
     logging_config_file = os.path.join(module_path, logging_config_file_name)
 
-    # Check if the configuration file exists
+    # Check if the log configuration file exists
     if not os.path.isfile(logging_config_file):
         raise FileNotFoundError(f"Logging configuration file not found: {logging_config_file}")
 
@@ -266,179 +427,40 @@ def main():
     # Initialize paths dictionary from the config file
     app_config_file_path = os.path.join(module_path, app_config_file_name)
     paths_dict = process_configuration_file(app_config_file_path)
+    output_dir = paths_dict['output_dir']
+
+    # Checks if output directory exists, if not creates it.
+    if not os.path.exists(output_dir):
+        logger.error(f"Output directory {output_dir} does not exist, Creating...")
+        os.mkdir(output_dir)
+        logger.info(f"Successfully created {output_dir}")
+
+    # Execute System analysis parsers
+    execute_system_analysis_parsers(paths_dict, output_dir)
+
+    # Execute Process analysis parsers
+    execute_process_analysis_parsers(paths_dict, output_dir)
+
+    # Execute Network analysis parsers
+    execute_network_analysis_parsers(paths_dict, output_dir)
+
+    # Execute File analysis parsers
+    execute_file_analysis_parsers(paths_dict, output_dir)
+
+    # Execute User analysis parsers
+    execute_user_analysis_parsers(paths_dict, output_dir)
+
+    # Execute AV analysis parsers
+    execute_av_analysis_parsers(paths_dict, output_dir)
+
+    # Execute Custom analysis parsers
+    execute_custom_parsers(paths_dict, output_dir)
+
+    # Ensure there isnt empty files
+    check_output_files(output_dir)
     
-    if not os.path.exists(paths_dict['output_dir']):
-        logger.error(f"Output directory {paths_dict['output_dir']} does not exist, Creating...")
-        os.mkdir(paths_dict['output_dir'])
-        logger.info(f"Successfully created {paths_dict['output_dir']}")
-
-    # Process Analysis parsers
-    # Execute procfs parser
-    procfs_json = procfs_parser.parse(paths_dict['proc_directory'])
-    procfs_json_path = os.path.join(paths_dict['output_dir'], 'procfs_json.json')
-    write_json_string_to_file(procfs_json, procfs_json_path)
-
-    # Execute ps command parser
-    ps_full_json = ps_full_command_parser.parse(paths_dict['process_list_full_file'])
-    ps_full_json_path = os.path.join(paths_dict['output_dir'], 'ps_full_json.json')
-    write_json_string_to_file(ps_full_json, ps_full_json_path)
-
-    # Network Analysis parsers
-    # Execute the netstat command parser
-    netstat_json = netstat_command_parser.parse(paths_dict['netstat_file'])
-    netstat_json_path = os.path.join(paths_dict['output_dir'], 'netstat_json.json')
-    write_json_string_to_file(netstat_json, netstat_json_path)
-
-    # System Analysis parsers
-    # Execute the lsmod command parser
-    lsmod_json = lsmod_command_parser.parse(paths_dict['lsmod_file'])
-    lsmod_json_path = os.path.join(paths_dict['output_dir'], 'lsmod_json.json')
-    write_json_string_to_file(lsmod_json, lsmod_json_path)
-
-    # Execute the lsusb command parser
-    lsusb_json = lsusb_command_parser.parse(paths_dict['lsusb_file'])
-    lsusb_json_path = os.path.join(paths_dict['output_dir'], 'lsusb_json.json')
-    write_json_string_to_file(lsusb_json, lsusb_json_path)
-
-    # Execute the hostnamectl command parser
-    hostnamectl_json = hostnamectl_command_parser.parse(paths_dict['hostnamectl_file'])
-    hostnamectl_json_path = os.path.join(paths_dict['output_dir'], 'hostnamectl_json.json')
-    write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
-
-    # Execute the systemctl service units command parser
-    services_units_json = systemctl_service_units_command_parser.parse(paths_dict['services_units_file'])
-    services_units_json_path = os.path.join(paths_dict['output_dir'], 'services_units_json.json')
-    write_json_string_to_file(services_units_json, services_units_json_path)
-
-    # Execute the systemctl timer units command parser
-    timer_units_json = systemctl_timer_units_command_parser.parse(paths_dict['timer_units_file'])
-    timer_units_json_path = os.path.join(paths_dict['output_dir'], 'timer_units_json.json')
-    write_json_string_to_file(timer_units_json, timer_units_json_path)
-
-    # Execute the systemctl list-units command parser
-    timedatectl_json = timedatectl_command_parser.parse(paths_dict['timedatectl_file'])
-    timedatectl_json_path = os.path.join(paths_dict['output_dir'], 'timedatectl_json.json')
-    write_json_string_to_file(timedatectl_json, timedatectl_json_path)
-
-    # User Analysis parsers
-    # Execute the lastlog command parser
-    lastlog_json = lastlog_command_parser.parse(paths_dict['lastlog_file'])
-    lastlog_json_path = os.path.join(paths_dict['output_dir'], 'lastlog_json.json')
-    write_json_string_to_file(lastlog_json, lastlog_json_path)
-
-    # Execute the lastlog command parser
-    w_json = w_command_parser.parse(paths_dict['w_file'])
-    w_json_path = os.path.join(paths_dict['output_dir'], 'sessions_json.json')
-    write_json_string_to_file(w_json, w_json_path)
-
-    # File Analysis parsers
-    # Execute the recent modified files parser
-    recent_modified_files_path = os.path.join(paths_dict['recent_modified_files_file'])
-    recent_modified_files_json = recent_modified_files_parser.parse(recent_modified_files_path)
-    recent_modified_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_modified_files_json.json')
-    write_json_string_to_file(recent_modified_files_json, recent_modified_files_json_path)
-
-    # Execute the open files parser
-    open_files_path = os.path.join(paths_dict['open_files_file'])
-    open_files_json = lsof_command_parser.parse(open_files_path)
-    open_files_json_json = os.path.join(paths_dict['output_dir'], 'open_files_json.json')
-    write_json_string_to_file(open_files_json, open_files_json_json)
-
-    # Execute the recent accessed files parser
-    recent_accessed_files_path = os.path.join(paths_dict['recent_accessed_files_file'])
-    recent_accessed_files_json = recent_accessed_files_parser.parse(recent_accessed_files_path)
-    recent_accessed_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_accessed_files_json.json')
-    write_json_string_to_file(recent_accessed_files_json, recent_accessed_files_json_path)
-
-    # Execute the recent modified executable files parser
-    recent_modified_executable_files_path = os.path.join(paths_dict['recent_modified_executable_files_file'])
-    recent_modified_executable_files_json = recent_modified_executable_files_parser.parse(recent_modified_executable_files_path)
-    recent_modified_executable_files_json_path = os.path.join(paths_dict['output_dir'], 'recent_modified_executable_files_json.json')
-    write_json_string_to_file(recent_modified_executable_files_json, recent_modified_executable_files_json_path)
-
-    # Execute the executable files sha256 parser
-    executable_files_sha256_path = os.path.join(paths_dict['executable_files_sha256_file'])
-    executable_files_sha256_json = executable_files_sha256_parser.parse(executable_files_sha256_path)
-    executable_files_sha256_json_path = os.path.join(paths_dict['output_dir'], 'executable_files_sha256_json.json')
-    write_json_string_to_file(executable_files_sha256_json, executable_files_sha256_json_path)
-    
-    # AV Analysis parsers
-    # Execute sestatus command parser
-    sestatus_json = sestatus_command_parser.parse(paths_dict['sestatus_file'])
-    sestatus_json_path = os.path.join(paths_dict['output_dir'], 'sestatus_json.json')
-    write_json_string_to_file(sestatus_json, sestatus_json_path)
-
-    # General parsers
-    # Execute the history files parser
-    cmd_history_json = history_files_parser.parse(paths_dict['base_dir'])
-    cmd_history_json_path = os.path.join(paths_dict['output_dir'], 'cmd_history_json.json')
-    write_json_string_to_file(cmd_history_json, cmd_history_json_path)
-
-    # Execute the modules file parser
-    modules_file_path = os.path.join(paths_dict['proc_directory'], 'modules')
-    modules_json = modules_file_parser.parse(modules_file_path)
-    modules_json_path = os.path.join(paths_dict['output_dir'], 'modules_json.json')
-    write_json_string_to_file(modules_json, modules_json_path)
-
-    # Execute the passwd file parser
-    passwd_file_path = os.path.join(paths_dict['etc_directory'], 'passwd')
-    passwd_json = passwd_file_parser.parse(passwd_file_path)
-    passwd_json_path = os.path.join(paths_dict['output_dir'], 'passwd_json.json')
-    write_json_string_to_file(passwd_json, passwd_json_path)
-
-    # Execute the group file parser
-    group_file_path = os.path.join(paths_dict['etc_directory'], 'group')
-    group_json = group_file_parser.parse(group_file_path)
-    group_json_path = os.path.join(paths_dict['output_dir'], 'group_json.json')
-    write_json_string_to_file(group_json, group_json_path)
-
-    # Execute the hosts file parser
-    hosts_file_path = os.path.join(paths_dict['etc_directory'], 'hosts')
-    hosts_json = hosts_file_parser.parse(hosts_file_path)
-    hosts_json_path = os.path.join(paths_dict['output_dir'], 'hosts_json.json')
-    write_json_string_to_file(hosts_json, hosts_json_path)
-
-    # Execute the resolv file parser
-    resolv_file_path = os.path.join(paths_dict['etc_directory'], 'resolv.conf')
-    resolv_json = resolv_file_parser.parse(resolv_file_path)
-    resolv_json_path = os.path.join(paths_dict['output_dir'], 'resolv_json.json')
-    write_json_string_to_file(resolv_json, resolv_json_path)
-
-    """
-    print("Process Analysis:")
-    print(paths_dict['process_list_medium_file'])
-    print(paths_dict['process_list_full_file'])
-
-    print("\nFile Analysis:")
-    print(paths_dict['open_files_file'])
-    print(paths_dict['recent_accessed_files_file'])
-    print(paths_dict['recent_modified_files_file'])
-    print(paths_dict['hidden_directories_file'])
-
-    print("\nNetwork Analysis:")
-    print(paths_dict['arp_cache_file'])
-    print(paths_dict['ifconfig_file'])
-    print(paths_dict['iptables_rules_file'])
-    print(paths_dict['netstat_file'])
-    print(paths_dict['routing_table_file'])
-    print(paths_dict['ss_file'])
-    print(paths_dict['ss_full_file'])
-
-    print("\nUser Analysis:")
-    print(paths_dict['last_file'])
-    print(paths_dict['lastlog'])
-    print(paths_dict['w_file'])
-    print(paths_dict['who_file'])
-
-    print("\nSystem Analysis:")
-    print(paths_dict['lsusb_file'])
-    print(paths_dict['lsmod_file'])
-    print(paths_dict['services_units_file'])
-
-    print("\nAV Analysis:")
-    print(paths_dict['sestatus_file'])
-    """
     logger.info("Main module completed.")
+
 
 if __name__ == "__main__":
     main()
