@@ -71,9 +71,11 @@ SYSTEM_FILES=(
   "/etc/inittab"
   "/etc/modprobe.d"
   "/boot/grub2/grub.cfg"
-  "/etc/ld.so.preload"
+  "/etc/ld.so.conf"
+  "/etc/ld.so.conf.d
   "/etc/systemd/system"
   "/usr/lib/systemd/system"
+  "/usr/lib/systemd/system-generators"
   "/etc/logrotate.conf"
   "/etc/logrotate.d"
   "/etc/yum.conf"
