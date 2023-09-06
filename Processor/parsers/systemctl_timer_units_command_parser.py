@@ -11,7 +11,6 @@ def parse(file_path):
     # Iterate through the lines and split each line into fields
     for line in lines[1:]:
         fields = line.split()
-        print(fields)
 
         non_schedule = "n/a"
 
