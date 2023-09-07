@@ -305,7 +305,12 @@ def execute_user_analysis_parsers(paths_dict, output_dir):
     lastlog_json_path = os.path.join(output_dir, 'lastlog_json.json')
     write_json_string_to_file(lastlog_json, lastlog_json_path)
 
-    # Execute the lastlog command parser
+     # Execute the last command parser
+    last_json = last_command_parser.parse(paths_dict['last_file'])
+    last_json_path = os.path.join(output_dir, 'last_json.json')
+    write_json_string_to_file(last_json, last_json_path)
+
+    # Execute the w command parser
     w_json = w_command_parser.parse(paths_dict['w_file'])
     w_json_path = os.path.join(output_dir, 'sessions_json.json')
     write_json_string_to_file(w_json, w_json_path)
@@ -458,7 +463,7 @@ def main():
 
     # Ensure there isnt empty files
     check_output_files(output_dir)
-    
+
     logger.info("Main module completed.")
 
 

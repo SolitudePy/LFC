@@ -18,6 +18,7 @@ __all__ = [
     "lsusb_command_parser",
     "lsof_command_parser",
     "lastlog_command_parser",
+    "last_command_parser",
     "w_command_parser",
     "systemctl_service_units_command_parser",
     "systemctl_timer_units_command_parser",
