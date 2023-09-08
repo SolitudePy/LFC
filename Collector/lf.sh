@@ -17,8 +17,6 @@ PROCESS_ANALYSIS_DIR="$OUTPUT_DIR/Process_Analysis"
 recent_modified_files_threshold=24 # Time threshold in hours for recent modified files.
 recent_read_files_threshold=24 # Time threshold in hours for recent read files.
 recent_modified_executables_threshold=24 # Time threshold in hours for recent modified/created executable files.
-#user=$(whoami)
-#history_file="$OUTPUT_DIR/history_$user.txt"
 
 # Array of important configuration Files
 SYSTEM_FILES=(
@@ -72,7 +70,7 @@ SYSTEM_FILES=(
   "/etc/modprobe.d"
   "/boot/grub2/grub.cfg"
   "/etc/ld.so.conf"
-  "/etc/ld.so.conf.d
+  "/etc/ld.so.conf.d"
   "/etc/systemd/system"
   "/usr/lib/systemd/system"
   "/usr/lib/systemd/system-generators"
@@ -83,7 +81,6 @@ SYSTEM_FILES=(
   "/etc/resolv.conf"
   "/var/spool/cron"
   "/etc/os-release"
-  #"/var/log"
   "/var/www"
   # Add more files as needed
   )
@@ -150,7 +147,7 @@ for file in "${SYSTEM_FILES[@]}"; do
     mkdir -p "$OUTPUT_DIR$dir_path"
 
     # Copy the file to the output directory with its directory structure
-    cp -R "$file" "$OUTPUT_DIR$dir_path"
+    cp -pR "$file" "$OUTPUT_DIR$dir_path"
 
   elif [ -d "$file" ]; then
 
@@ -164,7 +161,7 @@ for file in "${SYSTEM_FILES[@]}"; do
       mkdir -p "$OUTPUT_DIR$dir_path"
 
       # Directory is not empty, copy its contents recursively
-      cp -R "$file" "$OUTPUT_DIR$file"
+      cp -pR "$file" "$OUTPUT_DIR$file"
     fi
   else
     echo "$(date +"%Y-%m-%d %H:%M:%S") - File or directory does not exist/empty: $file" >> "$LOGFILE"
@@ -195,7 +192,7 @@ while IFS=: read -r user _ _ _ _ home _; do
         target_file="$OUTPUT_DIR$home/$file"
         target_dir=$(dirname "$target_file")
         mkdir -p "$target_dir"
-        cp "$home/$file" "$target_file"
+        cp -p "$home/$file" "$target_file"
       else
         echo "$(date +"%Y-%m-%d %H:%M:%S") - File does not exist: $home/$file" >> "$LOGFILE"
       fi
@@ -237,7 +234,7 @@ for file in "${PROC_IMPORTANT_FILES[@]}"; do
   mkdir -p "$(dirname "$source_path")"
 
   # Copy the file while preserving directory structure
-  cp -R "$source_path" "$target_path"
+  cp -pR "$source_path" "$target_path"
 done
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done ProcFS Files General Acquisition =====" >> "$LOGFILE"
@@ -282,7 +279,6 @@ mkdir -p "$PROCESS_ANALYSIS_DIR"
 ## Run these commands to collect information
 ps -eo user,pid,comm,args > "$PROCESS_ANALYSIS_DIR/process_list_medium.txt"
 ps -eF                    > "$PROCESS_ANALYSIS_DIR/process_list_full.txt"
-create_file_if_output_not_empty "ls -alR /proc/*/exe 2> /dev/null | grep deleted" "$PROCESS_ANALYSIS_DIR/process_no_binary_list.txt"
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Process Information Acquisition =====" >> "$LOGFILE"
 
@@ -297,7 +293,7 @@ netstat -tunap  > "$NETWORK_ANALYSIS_DIR/netstat.txt"
 ip route show   > "$NETWORK_ANALYSIS_DIR/routing_table.txt"
 ip neigh show   > "$NETWORK_ANALYSIS_DIR/arp_cache.txt"
 ss -tuln        > "$NETWORK_ANALYSIS_DIR/ss.txt"
-ss -a -e -i     > "$NETWORK_ANALYSIS_DIR/ss_full.txt"
+ss -a           > "$NETWORK_ANALYSIS_DIR/ss_full.txt"
 iptables-save   > "$NETWORK_ANALYSIS_DIR/iptables_rules.txt"
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Network Information Acquisition =====" >> "$LOGFILE"
@@ -340,9 +336,6 @@ w       > "$USER_ANALYSIS_DIR/w.txt"
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done User Information Acquisition =====" >> "$LOGFILE"
 
-# Rootkit Detection Tools
-#rkhunter --check --sk > "$OUTPUT_DIR/rkhunter_scan.txt"
-
 # End time
 END_TIME=$(date +%s)
 
@@ -351,7 +344,7 @@ ELAPSED_TIME=$((END_TIME - START_TIME))
 echo "$(date +"%Y-%m-%d %H:%M:%S") - Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR." >> "$LOGFILE"
 
 # zip output directory -v is for verbose
-tar -czvf "$ZIP_DIR/results.tar.gz" "$OUTPUT_DIR"
+tar -czvf "$ZIP_DIR/result.tar.gz" -C "$ZIP_DIR" result
 
 # Delete uncompressed output directory
-rm -rf "$OUTPUT_DIR"
+#rm -rf "$OUTPUT_DIR"

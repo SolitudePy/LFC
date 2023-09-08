@@ -242,6 +242,11 @@ def execute_network_analysis_parsers(paths_dict, output_dir):
     netstat_json_path = os.path.join(output_dir, 'netstat_json.json')
     write_json_string_to_file(netstat_json, netstat_json_path)
 
+    # Execute the ss command parser
+    ss_full_json = ss_command_parser.parse(paths_dict['ss_full_file'])
+    ss_full_json_path = os.path.join(output_dir, 'ss_json.json')
+    write_json_string_to_file(ss_full_json, ss_full_json_path)
+
 
 def execute_file_analysis_parsers(paths_dict, output_dir):
     """

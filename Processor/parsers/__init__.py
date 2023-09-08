@@ -14,6 +14,7 @@ __all__ = [
     "timedatectl_command_parser",
     "ps_full_command_parser",
     "netstat_command_parser",
+    "ss_command_parser",
     "lsmod_command_parser",
     "lsusb_command_parser",
     "lsof_command_parser",
