@@ -1,6 +1,5 @@
 import logging
 from utils.parser import Parser
-import re
 
 logger = logging.getLogger(__name__)
 

@@ -16,6 +16,7 @@ __all__ = [
     "netstat_command_parser",
     "ss_command_parser",
     "ip_neigh_show_command_parser",
+    "iptables_command_parser",
     "lsmod_command_parser",
     "lsusb_command_parser",
     "lsof_command_parser",
