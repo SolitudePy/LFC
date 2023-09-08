@@ -247,6 +247,11 @@ def execute_network_analysis_parsers(paths_dict, output_dir):
     ss_full_json_path = os.path.join(output_dir, 'ss_json.json')
     write_json_string_to_file(ss_full_json, ss_full_json_path)
 
+    # Execute the ip neigh show command parser
+    arp_cache_json = ip_neigh_show_command_parser.parse(paths_dict['arp_cache_file'])
+    arp_cache_json_path = os.path.join(output_dir, 'arp_cache_json.json')
+    write_json_string_to_file(arp_cache_json, arp_cache_json_path)
+
 
 def execute_file_analysis_parsers(paths_dict, output_dir):
     """
