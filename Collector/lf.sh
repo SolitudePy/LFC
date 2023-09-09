@@ -85,6 +85,17 @@ SYSTEM_FILES=(
   # Add more files as needed
   )
 
+IMPORTANT_LOG_FILES=(
+  "/var/log/secure"
+  "/var/log/audit"
+  "/var/log/boot.log"
+  "/var/log/btmp"
+  "/var/log/wtmp"
+  "/var/log/cron"
+  "/var/log/laurel"
+  # Add more files as needed
+)
+
 # Array of important user related files
 USER_CONFIG_FILES=(
       ".bashrc"
@@ -106,6 +117,7 @@ PROC_PID_FILES=(
     "exe"
     "comm"
     "environ"
+    "fd"
     # Add more files as needed
   )
 
@@ -121,6 +133,7 @@ PROC_IMPORTANT_FILES=(
 )
 
 create_file_if_output_not_empty() {
+    # Creates a file only if command has output.
     local command="$1"
     local filename="$2"
 
@@ -133,7 +146,9 @@ create_file_if_output_not_empty() {
 }
 
 write_log() {
-  echo "5"
+  local message="$1"
+  local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+  echo "[$timestamp] - $message" >> "$LOGFILE"
 }
 
 copy_configuration_files() {
@@ -164,7 +179,7 @@ copy_configuration_files() {
         cp -pR "$file" "$OUTPUT_DIR$file"
       fi
     else
-      echo "$(date +"%Y-%m-%d %H:%M:%S") - File or directory does not exist/empty: $file" >> "$LOGFILE"
+      write_log "File or directory does not exist or empty: $file"
     fi
   done
 
@@ -192,11 +207,34 @@ copy_user_configuration_files() {
           mkdir -p "$target_dir"
           cp -p "$home/$file" "$target_file"
         else
-          echo "$(date +"%Y-%m-%d %H:%M:%S") - File does not exist: $home/$file" >> "$LOGFILE"
+          write_log "File does not exist: $home/$file"
         fi
       done
     fi
   done < /etc/passwd
+}
+
+copy_important_logs() {
+    # Copies important logs.   
+    for file in "${IMPORTANT_LOG_FILES[@]}"; do
+        if [ -e "$file" ]; then
+            if [ -d "$file" ]; then
+
+                # If it's a directory, copy its contents to the target directory
+                local target_dir="$OUTPUT_DIR$file"
+                if [ ! -d "$target_dir" ]; then
+                    mkdir -p "$target_dir"
+                fi
+                cp -R "$file"/* "$target_dir/"
+            else
+
+                # Copy individual log file
+                local target_dir="$OUTPUT_DIR$(dirname "$file")"
+                mkdir -p "$target_dir"
+                cp "$file" "$target_dir"
+            fi
+        fi
+    done
 }
 
 traverse_procfs() {
@@ -316,71 +354,62 @@ generate_user_analysis_info() {
 }
 
 # ===================== MAIN =====================
+
+# Deletes former output directory, just in case
+rm -rf "$OUTPUT_DIR"
+
 # Create the output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
+# ================================ FILE ANALYSIS ===================================
+write_log "===== Starting Filesystem Information Acquisition ====="
+generate_file_analysis_info
+write_log "===== Done Filesystem Information Acquisition ====="
+
 # ================================ SYSTEM FILES ACQUISTION =========================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting System Files Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting System Files Acquisition ====="
 copy_configuration_files
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done System Files Acquisition =====" >> "$LOGFILE"
+write_log "===== Done System Files Acquisition ====="
 
 # ================================ USER FILES ACQUISITION  =========================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting User Configuration Files Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting User Configuration Files Acquisition ====="
 copy_user_configuration_files
+write_log "===== Done User Configuration Files Acquisition ====="
 
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done User Configuration Files Acquisition =====" >> "$LOGFILE"
+# ================================ LOG FILES ACQUISITION  ==========================
+write_log "===== Starting Log Files Acquisition ====="
+copy_important_logs
+write_log "===== Done Log Files Acquisition ====="
 
 # ================================ PROCFS TRAVERSING ===============================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting ProcFS Traversing =====" >> "$LOGFILE"
-
+write_log "===== Starting ProcFS Traversing ====="
 traverse_procfs
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done ProcFS Traversing =====" >> "$LOGFILE"
+write_log "===== Done ProcFS Traversing ====="
 
 # ================================ SYSTEM ANALYSIS =================================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting System Information Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting System Information Acquisition ====="
 generate_system_analysis_info
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done System Information Acquisition =====" >> "$LOGFILE"
+write_log "===== Done System Information Acquisition ====="
 
 # ================================ PROCESS ANALYSIS ================================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Process Information Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting Process Information Acquisition ====="
 generate_process_analysis_info
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Process Information Acquisition =====" >> "$LOGFILE"
+write_log "===== Done Process Information Acquisition ====="
 
 # ================================ NETWORK ANALYSIS ================================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Network Information Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting Network Information Acquisition ====="
 generate_network_analysis_info
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Network Information Acquisition =====" >> "$LOGFILE"
-
-# ================================ FILE ANALYSIS ===================================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Filesystem Information Acquisition =====" >> "$LOGFILE"
-
-generate_file_analysis_info
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Filesystem Information Acquisition =====" >> "$LOGFILE"
+write_log "===== Done Network Information Acquisition ====="
 
 # ================================ AV ANALYSIS =====================================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Security Sensors Information Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting Security Sensors Information Acquisition ====="
 generate_av_analysis_info
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Security Sensors Information Acquisition =====" >> "$LOGFILE"
+write_log "===== Done Security Sensors Information Acquisition ====="
 
 # ================================ USER ANALYSIS ==================================
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting User Information Acquisition =====" >> "$LOGFILE"
-
+write_log "===== Starting User Information Acquisition ====="
 generate_user_analysis_info
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done User Information Acquisition =====" >> "$LOGFILE"
+write_log "===== Done User Information Acquisition ====="
 
 # End time
 END_TIME=$(date +%s)
@@ -390,7 +419,7 @@ ELAPSED_TIME=$((END_TIME - START_TIME))
 echo "$(date +"%Y-%m-%d %H:%M:%S") - Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR." >> "$LOGFILE"
 
 # zip output directory -v is for verbose
-tar -czvf "$ZIP_DIR/result.tar.gz" -C "$ZIP_DIR" result
+tar -czf "$ZIP_DIR/result.tar.gz" -C "$ZIP_DIR" result
 
 # Delete uncompressed output directory
 #rm -rf "$OUTPUT_DIR"
