@@ -132,207 +132,253 @@ create_file_if_output_not_empty() {
     fi
 }
 
-# Create the output directory if it doesn't exist
-mkdir -p "$OUTPUT_DIR"
+write_log() {
+  echo "5"
+}
 
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting System Files Acquisition =====" >> "$LOGFILE"
-
-# Copy configuration files
-for file in "${SYSTEM_FILES[@]}"; do
-  if [ -f "$file" -a -s "$file" ]; then
-    # Get the directory path of the file
-    dir_path=$(dirname "$file")
-
-    # Create the corresponding directory structure in the output directory
-    mkdir -p "$OUTPUT_DIR$dir_path"
-
-    # Copy the file to the output directory with its directory structure
-    cp -p "$file" "$OUTPUT_DIR$dir_path"
-
-  elif [ -d "$file" ]; then
-
-    # Check if the directory is empty
-    if [ -n "$(find "$file" -mindepth 1 -print -quit)" ]; then
-
+copy_configuration_files() {
+  # Copy configuration files
+  for file in "${SYSTEM_FILES[@]}"; do
+    if [ -f "$file" -a -s "$file" ]; then
       # Get the directory path of the file
       dir_path=$(dirname "$file")
 
       # Create the corresponding directory structure in the output directory
       mkdir -p "$OUTPUT_DIR$dir_path"
 
-      # Directory is not empty, copy its contents recursively
-      cp -pR "$file" "$OUTPUT_DIR$file"
+      # Copy the file to the output directory with its directory structure
+      cp -p "$file" "$OUTPUT_DIR$dir_path"
+
+    elif [ -d "$file" ]; then
+
+      # Check if the directory is empty
+      if [ -n "$(find "$file" -mindepth 1 -print -quit)" ]; then
+
+        # Get the directory path of the file
+        dir_path=$(dirname "$file")
+
+        # Create the corresponding directory structure in the output directory
+        mkdir -p "$OUTPUT_DIR$dir_path"
+
+        # Directory is not empty, copy its contents recursively
+        cp -pR "$file" "$OUTPUT_DIR$file"
+      fi
+    else
+      echo "$(date +"%Y-%m-%d %H:%M:%S") - File or directory does not exist/empty: $file" >> "$LOGFILE"
     fi
-  else
-    echo "$(date +"%Y-%m-%d %H:%M:%S") - File or directory does not exist/empty: $file" >> "$LOGFILE"
-  fi
-done
+  done
+
+  # This section is part of the configuration files, it was made this way
+  # since it contains symbolic links and many directories.
+  # Copy contents of /etc/rc*.d directories while maintaining directory structure
+  find /etc/rc*.d/ -type d -exec mkdir -p "$OUTPUT_DIR"/{} \;
+  find /etc/rc*.d/ -type f -exec cp --parents {} "$OUTPUT_DIR" \;
+
+  # Copy contents of /etc/init.d directory while maintaining directory structure
+  find /etc/init.d/ -type d -exec mkdir -p "$OUTPUT_DIR"/{} \;
+  find /etc/init.d/ -type f -exec cp --parents {} "$OUTPUT_DIR" \;
+}
+
+copy_user_configuration_files() {
+  # Copy user configuration files while maintaining directory structure
+  while IFS=: read -r user _ _ _ _ home _; do
+    if [ -d "$home" ]; then
+
+      # Loops through list of user config files
+      for file in "${USER_CONFIG_FILES[@]}"; do
+        if [ -e "$home/$file" ]; then
+          target_file="$OUTPUT_DIR$home/$file"
+          target_dir=$(dirname "$target_file")
+          mkdir -p "$target_dir"
+          cp -p "$home/$file" "$target_file"
+        else
+          echo "$(date +"%Y-%m-%d %H:%M:%S") - File does not exist: $home/$file" >> "$LOGFILE"
+        fi
+      done
+    fi
+  done < /etc/passwd
+}
+
+traverse_procfs() {
+  # Traverse /proc and copy files from each process directory
+  for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+      process_dir="/proc/$pid"
+
+      # Create corresponding process directory in the destination directory
+      mkdir -p "$OUTPUT_DIR$process_dir"
+
+      # Copy important artifacts from the process directory
+      for artifact in "${PROC_PID_FILES[@]}"; do
+          artifact_path="$process_dir/$artifact"
+
+          # Copy artifact to the destination directory
+          if [ -f "$artifact_path" ]; then
+              cp -p "$artifact_path" "$OUTPUT_DIR$artifact_path"
+          fi
+      done
+  done
+
+  # Iterate over the important files and copy them while maintaining directory structure
+  for file in "${PROC_IMPORTANT_FILES[@]}"; do
+    source_path="$file"
+    target_path="$OUTPUT_DIR/$file"
+
+    # Create the target directory if it doesn't exist
+    mkdir -p "$(dirname "$source_path")"
+
+    # Copy the file while preserving directory structure
+    cp -pR "$source_path" "$target_path"
+  done
+}
+
+generate_system_analysis_info(){
+  # System Information 
+  ## Create System_Info directory
+  mkdir -p "$SYSTEM_ANALYSIS"
+  ## Run these commands to collect information
+  uname -a                                       > "$SYSTEM_ANALYSIS/uname.txt"
+  uptime                                         > "$SYSTEM_ANALYSIS/uptime.txt"
+  date                                           > "$SYSTEM_ANALYSIS/date.txt"
+  timedatectl                                    > "$SYSTEM_ANALYSIS/timedatectl.txt"
+  hostname                                       > "$SYSTEM_ANALYSIS/hostname.txt"
+  hostnamectl                                    > "$SYSTEM_ANALYSIS/hostnamectl.txt"
+  df -h                                          > "$SYSTEM_ANALYSIS/df.txt"
+  free                                           > "$SYSTEM_ANALYSIS/free.txt"
+  lscpu                                          > "$SYSTEM_ANALYSIS/lscpu.txt"
+  lshw -short                                    > "$SYSTEM_ANALYSIS/lshw.txt"
+  lsusb                                          > "$SYSTEM_ANALYSIS/lsusb.txt"
+  lspci                                          > "$SYSTEM_ANALYSIS/lspci.txt"
+  lsscsi -s                                      > "$SYSTEM_ANALYSIS/lsscsi.txt"
+  rpm -qa                                        > "$SYSTEM_ANALYSIS/installed_packages.txt"
+  lsmod                                          > "$SYSTEM_ANALYSIS/lsmod.txt"
+  systemctl list-unit-files --type=service --all > "$SYSTEM_ANALYSIS/services_unit_files.txt"
+  systemctl list-units --type=service --all      > "$SYSTEM_ANALYSIS/services_units.txt"
+  systemctl list-timers --all                    > "$SYSTEM_ANALYSIS/timer_units.txt"
+  fdisk -l                                       > "$SYSTEM_ANALYSIS/fdisk.txt"
+  env                                            > "$SYSTEM_ANALYSIS/env.txt"
+}
+
+generate_process_analysis_info() {
+  # Process Information
+  ## Creates Process information directory
+  mkdir -p "$PROCESS_ANALYSIS_DIR"
+  ## Run these commands to collect information
+  ps -eo user,pid,comm,args > "$PROCESS_ANALYSIS_DIR/process_list_medium.txt"
+  ps -eF                    > "$PROCESS_ANALYSIS_DIR/process_list_full.txt"
+  create_file_if_output_not_empty "ls -alR /proc/*/exe 2> /dev/null | grep deleted" "$PROCESS_ANALYSIS_DIR/process_deleted_binary.txt"
+}
+
+generate_network_analysis_info() {
+  # Network Information
+  ## Creates Network information directory
+  mkdir -p "$NETWORK_ANALYSIS_DIR"
+  ## Run these commands to collect information
+  ifconfig        > "$NETWORK_ANALYSIS_DIR/ifconfig.txt"
+  netstat -tunap  > "$NETWORK_ANALYSIS_DIR/netstat.txt"
+  ip route show   > "$NETWORK_ANALYSIS_DIR/routing_table.txt"
+  ip neigh show   > "$NETWORK_ANALYSIS_DIR/arp_cache.txt"
+  ss -tuln        > "$NETWORK_ANALYSIS_DIR/ss.txt"
+  ss -a           > "$NETWORK_ANALYSIS_DIR/ss_full.txt"
+  iptables-save   > "$NETWORK_ANALYSIS_DIR/iptables_rules.txt"
+}
+
+generate_file_analysis_info() {
+  # File Information
+  ## Creates File information directory
+  mkdir -p "$FILE_ANALYSIS_DIR"
+  ## Run these commands to collect information about files
+  find / -type f -not -path "/proc/*" -not -path "/sys/*" -mmin -$((recent_modified_files_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_modified_files.txt"
+  find / -type f -not -path "/proc/*" -not -path "/sys/*" -amin -$((recent_read_files_threshold * 60)) -printf "%AY-%Am-%Ad %AH:%AM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_accessed_files.txt"
+  find / -type f -executable -mmin -$((recent_modified_executables_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_modified_executable_files.txt"
+  find / -type f -executable -print0 2>/dev/null | xargs -0 sha256sum 2>/dev/null > "$FILE_ANALYSIS_DIR/executable_files_sha256.txt"
+  lsof > "$FILE_ANALYSIS_DIR/open_files.txt"
+  create_file_if_output_not_empty "find / -type d -name '\.*'" "$FILE_ANALYSIS_DIR/hidden_directories.txt"
+}
+
+generate_av_analysis_info() {
+  # AV & Security Sensors Information
+  ## Creates Security Sensors & AV information directory
+  mkdir -p "$AV_ANALYSIS_DIR"
+  # Run these commands to collect security sensors info
+  sestatus > "$AV_ANALYSIS_DIR/sestatus.txt"
+}
+
+generate_user_analysis_info() {
+  # User Information
+  ## Create User_Info directory
+  mkdir -p "$USER_ANALYSIS_DIR"
+  # Run these commands to collect user information
+  last    > "$USER_ANALYSIS_DIR/last.txt"
+  lastlog > "$USER_ANALYSIS_DIR/lastlog.txt"
+  who -H  > "$USER_ANALYSIS_DIR/who.txt"
+  w       > "$USER_ANALYSIS_DIR/w.txt"
+
+}
+
+# ===================== MAIN =====================
+# Create the output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
+# ================================ SYSTEM FILES ACQUISTION =========================
+echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting System Files Acquisition =====" >> "$LOGFILE"
+
+copy_configuration_files
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done System Files Acquisition =====" >> "$LOGFILE"
 
-# This section is part of the configuration files, it was made this way
-# since it contains symbolic links and many directories.
-# Copy contents of /etc/rc*.d directories while maintaining directory structure
-find /etc/rc*.d/ -type d -exec mkdir -p "$OUTPUT_DIR"/{} \;
-find /etc/rc*.d/ -type f -exec cp --parents {} "$OUTPUT_DIR" \;
-
-# Copy contents of /etc/init.d directory while maintaining directory structure
-find /etc/init.d/ -type d -exec mkdir -p "$OUTPUT_DIR"/{} \;
-find /etc/init.d/ -type f -exec cp --parents {} "$OUTPUT_DIR" \;
-
+# ================================ USER FILES ACQUISITION  =========================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting User Configuration Files Acquisition =====" >> "$LOGFILE"
 
-# Copy user configuration files while maintaining directory structure
-while IFS=: read -r user _ _ _ _ home _; do
-  if [ -d "$home" ]; then
-
-    # Loops through list of user config files
-    for file in "${USER_CONFIG_FILES[@]}"; do
-      if [ -e "$home/$file" ]; then
-        target_file="$OUTPUT_DIR$home/$file"
-        target_dir=$(dirname "$target_file")
-        mkdir -p "$target_dir"
-        cp -p "$home/$file" "$target_file"
-      else
-        echo "$(date +"%Y-%m-%d %H:%M:%S") - File does not exist: $home/$file" >> "$LOGFILE"
-      fi
-    done
-  fi
-done < /etc/passwd
+copy_user_configuration_files
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done User Configuration Files Acquisition =====" >> "$LOGFILE"
 
+# ================================ PROCFS TRAVERSING ===============================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting ProcFS Traversing =====" >> "$LOGFILE"
 
-# Traverse /proc and copy files from each process directory
-for pid in $(ls /proc | grep -E '^[0-9]+$'); do
-    process_dir="/proc/$pid"
-
-    # Create corresponding process directory in the destination directory
-    mkdir -p "$OUTPUT_DIR$process_dir"
-
-    # Copy important artifacts from the process directory
-    for artifact in "${PROC_PID_FILES[@]}"; do
-        artifact_path="$process_dir/$artifact"
-
-        # Copy artifact to the destination directory
-        if [ -f "$artifact_path" ]; then
-            cp -p "$artifact_path" "$OUTPUT_DIR$artifact_path"
-        fi
-    done
-done
+traverse_procfs
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done ProcFS Traversing =====" >> "$LOGFILE"
 
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting ProcFS Files General Acquisition =====" >> "$LOGFILE"
-# Iterate over the important files and copy them while maintaining directory structure
-for file in "${PROC_IMPORTANT_FILES[@]}"; do
-  source_path="$file"
-  target_path="$OUTPUT_DIR/$file"
-
-  # Create the target directory if it doesn't exist
-  mkdir -p "$(dirname "$source_path")"
-
-  # Copy the file while preserving directory structure
-  cp -pR "$source_path" "$target_path"
-done
-
-echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done ProcFS Files General Acquisition =====" >> "$LOGFILE"
-
-# Execute the 'history' command and save the output to a file
-#history > "$history_file"
-
+# ================================ SYSTEM ANALYSIS =================================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting System Information Acquisition =====" >> "$LOGFILE"
 
-# System Information 
-## Create System_Info directory
-mkdir -p "$SYSTEM_ANALYSIS"
-## Run these commands to collect information
-uname -a                                       > "$SYSTEM_ANALYSIS/uname.txt"
-uptime                                         > "$SYSTEM_ANALYSIS/uptime.txt"
-date                                           > "$SYSTEM_ANALYSIS/date.txt"
-timedatectl                                    > "$SYSTEM_ANALYSIS/timedatectl.txt"
-hostname                                       > "$SYSTEM_ANALYSIS/hostname.txt"
-hostnamectl                                    > "$SYSTEM_ANALYSIS/hostnamectl.txt"
-df -h                                          > "$SYSTEM_ANALYSIS/df.txt"
-free                                           > "$SYSTEM_ANALYSIS/free.txt"
-lscpu                                          > "$SYSTEM_ANALYSIS/lscpu.txt"
-lshw -short                                    > "$SYSTEM_ANALYSIS/lshw.txt"
-lsusb                                          > "$SYSTEM_ANALYSIS/lsusb.txt"
-lspci                                          > "$SYSTEM_ANALYSIS/lspci.txt"
-lsscsi -s                                      > "$SYSTEM_ANALYSIS/lsscsi.txt"
-rpm -qa                                        > "$SYSTEM_ANALYSIS/installed_packages.txt"
-lsmod                                          > "$SYSTEM_ANALYSIS/lsmod.txt"
-systemctl list-unit-files --type=service --all > "$SYSTEM_ANALYSIS/services_unit_files.txt"
-systemctl list-units --type=service --all      > "$SYSTEM_ANALYSIS/services_units.txt"
-systemctl list-timers --all                    > "$SYSTEM_ANALYSIS/timer_units.txt"
-fdisk -l                                       > "$SYSTEM_ANALYSIS/fdisk.txt"
-env                                            > "$SYSTEM_ANALYSIS/env.txt"
+generate_system_analysis_info
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done System Information Acquisition =====" >> "$LOGFILE"
 
+# ================================ PROCESS ANALYSIS ================================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Process Information Acquisition =====" >> "$LOGFILE"
 
-# Process Information
-## Creates Process information directory
-mkdir -p "$PROCESS_ANALYSIS_DIR"
-## Run these commands to collect information
-ps -eo user,pid,comm,args > "$PROCESS_ANALYSIS_DIR/process_list_medium.txt"
-ps -eF                    > "$PROCESS_ANALYSIS_DIR/process_list_full.txt"
+generate_process_analysis_info
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Process Information Acquisition =====" >> "$LOGFILE"
 
+# ================================ NETWORK ANALYSIS ================================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Network Information Acquisition =====" >> "$LOGFILE"
 
-# Network Information
-## Creates Network information directory
-mkdir -p "$NETWORK_ANALYSIS_DIR"
-## Run these commands to collect information
-ifconfig        > "$NETWORK_ANALYSIS_DIR/ifconfig.txt"
-netstat -tunap  > "$NETWORK_ANALYSIS_DIR/netstat.txt"
-ip route show   > "$NETWORK_ANALYSIS_DIR/routing_table.txt"
-ip neigh show   > "$NETWORK_ANALYSIS_DIR/arp_cache.txt"
-ss -tuln        > "$NETWORK_ANALYSIS_DIR/ss.txt"
-ss -a           > "$NETWORK_ANALYSIS_DIR/ss_full.txt"
-iptables-save   > "$NETWORK_ANALYSIS_DIR/iptables_rules.txt"
+generate_network_analysis_info
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Network Information Acquisition =====" >> "$LOGFILE"
 
+# ================================ FILE ANALYSIS ===================================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Filesystem Information Acquisition =====" >> "$LOGFILE"
 
-# File Information
-## Creates File information directory
-mkdir -p "$FILE_ANALYSIS_DIR"
-## Run these commands to collect information about files
-find / -type f -not -path "/proc/*" -not -path "/sys/*" -mmin -$((recent_modified_files_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_modified_files.txt"
-find / -type f -not -path "/proc/*" -not -path "/sys/*" -amin -$((recent_read_files_threshold * 60)) -printf "%AY-%Am-%Ad %AH:%AM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_accessed_files.txt"
-find / -type f -executable -mmin -$((recent_modified_executables_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_modified_executable_files.txt"
-find / -type f -executable -print0 2>/dev/null | xargs -0 sha256sum 2>/dev/null > "$FILE_ANALYSIS_DIR/executable_files_sha256.txt"
-lsof > "$FILE_ANALYSIS_DIR/open_files.txt"
-create_file_if_output_not_empty "find / -type d -name '\.*'" "$FILE_ANALYSIS_DIR/hidden_directories.txt"
+generate_file_analysis_info
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Filesystem Information Acquisition =====" >> "$LOGFILE"
 
+# ================================ AV ANALYSIS =====================================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting Security Sensors Information Acquisition =====" >> "$LOGFILE"
 
-# AV & Security Sensors Information
-## Creates Security Sensors & AV information directory
-mkdir -p "$AV_ANALYSIS_DIR"
-# Run these commands to collect security sensors info
-sestatus > "$AV_ANALYSIS_DIR/sestatus.txt"
+generate_av_analysis_info
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done Security Sensors Information Acquisition =====" >> "$LOGFILE"
 
+# ================================ USER ANALYSIS ==================================
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Starting User Information Acquisition =====" >> "$LOGFILE"
 
-# User Information
-## Create User_Info directory
-mkdir -p "$USER_ANALYSIS_DIR"
-# Run these commands to collect user information
-last    > "$USER_ANALYSIS_DIR/last.txt"
-lastlog > "$USER_ANALYSIS_DIR/lastlog.txt"
-who -H  > "$USER_ANALYSIS_DIR/who.txt"
-w       > "$USER_ANALYSIS_DIR/w.txt"
+generate_user_analysis_info
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") - ===== Done User Information Acquisition =====" >> "$LOGFILE"
 
