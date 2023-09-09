@@ -147,7 +147,7 @@ for file in "${SYSTEM_FILES[@]}"; do
     mkdir -p "$OUTPUT_DIR$dir_path"
 
     # Copy the file to the output directory with its directory structure
-    cp -pR "$file" "$OUTPUT_DIR$dir_path"
+    cp -p "$file" "$OUTPUT_DIR$dir_path"
 
   elif [ -d "$file" ]; then
 

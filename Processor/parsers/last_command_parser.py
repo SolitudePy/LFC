@@ -26,8 +26,14 @@ def parse(file_path):
             end_time = fields[8]
             session_length = fields[9]
         else:
-            end_time = "still logged in"
-            session_length = "still logged in"
+
+            # Checks if reboot ended
+            if fields[-1] != "running":
+                end_time = "still logged in"
+                session_length = "still logged in"
+            else:
+                end_time = "still running"
+                session_length = "still running"
         parser.data.append({
             "user_name": fields[0],
             "terminal": fields[1],

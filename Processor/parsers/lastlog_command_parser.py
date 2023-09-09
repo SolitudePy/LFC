@@ -7,7 +7,7 @@ def parse(file_path):
     parser = Parser()
     content = parser.read_file(file_path)
     lines = content.split("\n")
-    headers = ["user_name", "terminal", "dest_ip", "last_login"]
+    headers = ["user_name", "terminal", "src_ip", "last_login"]
 
     # Loops through passwd file lines
     for line in lines[1:]:
