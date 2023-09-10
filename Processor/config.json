@@ -21,7 +21,8 @@
         "timedatectl_file": "timedatectl.txt",
         "timer_units_file": "timer_units.txt",
         "uname_file": "uname.txt",
-        "uptime_file": "uptime.txt"
+        "uptime_file": "uptime.txt",
+        "env_file": "env.txt"
       },
     "file_analysis": {
         "base_directory": "File_Analysis",

@@ -39,5 +39,9 @@ if u check their path, hash, etc you could find malicious ones.
 # Compare installed packages to baseline
 self explained
 
+# Checks LD_PRELOAD & LD_LIBRARY_PATH
+An adversary might use these environment variables as a preload mechanism to hijack
+malicious shared libraries.
+
 
 

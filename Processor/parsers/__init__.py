@@ -11,6 +11,7 @@ __all__ = [
     "procfs_parser", 
     "sestatus_command_parser",
     "hostnamectl_command_parser",
+    "environment_variables_parser",
     "timedatectl_command_parser",
     "ps_full_command_parser",
     "netstat_command_parser",

@@ -77,6 +77,7 @@ def process_configuration_file(config_file_path):
     timedatectl_file = os.path.join(system_base_dir, config_data['system_analysis']['timedatectl_file'])
     timer_units_file = os.path.join(system_base_dir, config_data['system_analysis']['timer_units_file'])
     uname_file = os.path.join(system_base_dir, config_data['system_analysis']['uname_file'])
+    env_file = os.path.join(system_base_dir, config_data['system_analysis']['env_file'])
 
     # AV Analysis
     av_base_dir = os.path.join(base_dir, config_data['av_analysis']['base_directory'])
@@ -115,6 +116,7 @@ def process_configuration_file(config_file_path):
         'free_file': free_file,
         'hostname_file': hostname_file,
         'hostnamectl_file': hostnamectl_file,
+        'env_file': env_file,
         'installed_packages_file': installed_packages_file,
         'lscpu_file': lscpu_file,
         'lshw_file': lshw_file,
@@ -185,6 +187,11 @@ def execute_system_analysis_parsers(paths_dict, output_dir):
     hostnamectl_json = hostnamectl_command_parser.parse(paths_dict['hostnamectl_file'])
     hostnamectl_json_path = os.path.join(output_dir, 'hostnamectl_json.json')
     write_json_string_to_file(hostnamectl_json, hostnamectl_json_path)
+
+    # Execute the env command parser
+    env_json = environment_variables_parser.parse(paths_dict['env_file'])
+    env_json_path = os.path.join(output_dir, 'environ_json.json')
+    write_json_string_to_file(env_json, env_json_path)
 
     # Execute the systemctl service units command parser
     services_units_json = systemctl_service_units_command_parser.parse(paths_dict['services_units_file'])
