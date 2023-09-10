@@ -7,7 +7,7 @@
 # Defines the group id.
 [group_id]
 
-# Defines thr group name.
+# Defines the group name.
 [group_name]
 
 # Defines the process command line that was executed.
@@ -30,6 +30,12 @@
 
 # Defines the destination socket.
 [dest_socket]
+
+# Defines the source ip address.
+[src_ip]
+
+# Defines the destination ip address.
+[dest_ip]
 
 # Defines the kernel module name.
 [module_name]

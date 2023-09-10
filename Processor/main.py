@@ -29,6 +29,7 @@ def process_configuration_file(config_file_path):
     process_base_dir = os.path.join(base_dir, config_data['process_analysis']['base_directory'])
     process_list_medium_file = os.path.join(process_base_dir, config_data['process_analysis']['process_list_medium_file'])
     process_list_full_file = os.path.join(process_base_dir, config_data['process_analysis']['process_list_full_file'])
+    process_no_binary_file = os.path.join(process_base_dir, config_data['process_analysis']['process_no_binary_file'])
 
     # File Analysis
     file_base_dir = os.path.join(base_dir, config_data['file_analysis']['base_directory'])
@@ -90,6 +91,7 @@ def process_configuration_file(config_file_path):
     paths_dict = {
         'process_list_medium_file': process_list_medium_file,
         'process_list_full_file': process_list_full_file,
+        'process_no_binary_file': process_no_binary_file,
         'open_files_file': open_files_file,
         'recent_accessed_files_file': recent_accessed_files_file,
         'recent_modified_files_file': recent_modified_files_file,

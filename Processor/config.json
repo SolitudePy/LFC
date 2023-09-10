@@ -45,7 +45,8 @@
     "process_analysis": {
         "base_directory": "Process_Analysis",
         "process_list_medium_file": "process_list_medium.txt",
-        "process_list_full_file": "process_list_full.txt"
+        "process_list_full_file": "process_list_full.txt",
+        "process_no_binary_file": "process_no_binary.txt"
       },
     "user_analysis": {
         "base_directory": "User_Analysis",
