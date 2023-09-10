@@ -23,6 +23,9 @@ def parse(proc_path):
                         elif line.startswith('Uid:'):
                             uid = line.split(':', 1)[1].split()[0]
                             process_info['user_id'] = int(uid)
+                        elif line.startswith('PPid:'):
+                            ppid = line.split(':', 1)[1].split()[0]
+                            process_info['ppid'] = int(ppid)
             except FileNotFoundError as e:
                 logger.error(f"{e}")
 

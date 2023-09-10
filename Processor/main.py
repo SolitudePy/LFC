@@ -421,7 +421,6 @@ def check_output_files(output_dir):
  
 
 def main():
-
     # Get the absolute path to the module
     module_path = os.path.abspath(os.path.dirname(__file__))
     logging_config_file = os.path.join(module_path, logging_config_file_name)
