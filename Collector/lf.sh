@@ -40,7 +40,6 @@ SYSTEM_FILES=(
   "/etc/rsyslog.conf"
   "/etc/environment"
   "/etc/environment.d"
-  "/etc/crontab"
   "/etc/profile"
   "/etc/profile.d"
   "/etc/motd"
@@ -61,6 +60,8 @@ SYSTEM_FILES=(
   "/etc/issue-"
   "/etc/issue.net-"
   "/etc/xdg/autostart"
+  "/etc/crontab"
+  "/etc/anacrontab"
   "/etc/cron.d"
   "/etc/cron.daily"
   "/etc/cron.hourly"
@@ -135,6 +136,12 @@ PROC_IMPORTANT_FILES=(
   "/proc/diskstats"
 )
 
+# Array of blacklist paths to not include in the output directory
+BLACKLIST_FILE_DESCRIPTORS=(
+  "/var/lib/sss/mc/"
+  "/run/log/journal/"
+)
+
 create_file_if_output_not_empty() {
     # Creates a file only if command has output.
     local command="$1"
@@ -143,39 +150,58 @@ create_file_if_output_not_empty() {
     local output
     output=$(eval "$command")
 
+    # Checks if command's output is not empty.
     if [ -n "$output" ]; then
         echo "$output" > "$filename"
     fi
 }
 
 write_log() {
+  # Writes a log message to a log file.
   local message="$1"
   local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
   echo "[$timestamp] - $message" >> "$LOGFILE"
 }
 
+check_if_value_in_blacklist() {
+    # Checks if a value is in a list or is a match of a value in list.
+    local target_path="$1"
+
+    # Loop through the blacklist
+    for blacklist_path in "${BLACKLIST_FILE_DESCRIPTORS[@]}"; do
+        if [[ "$target_path" == "$blacklist_path" || "$target_path" == "$blacklist_path"* ]]; then
+            
+            # Target path is in the list
+            return 1
+        fi
+    done
+
+    # Target path is not in the list
+    return 0  
+}
+
 copy_configuration_files() {
-  # Copy configuration files
+  # Copy configuration files from a list of configuration files.
   for file in "${SYSTEM_FILES[@]}"; do
     if [ -f "$file" -a -s "$file" ]; then
       # Get the directory path of the file
       dir_path=$(dirname "$file")
 
-      # Create the corresponding directory structure in the output directory
+      # Create the corresponding directory structure in the output directory.
       mkdir -p "$OUTPUT_DIR$dir_path"
 
-      # Copy the file to the output directory with its directory structure
+      # Copy the file to the output directory with its directory structure.
       cp -p "$file" "$OUTPUT_DIR$dir_path"
 
     elif [ -d "$file" ]; then
 
-      # Check if the directory is empty
+      # Check if the directory is empty.
       if [ -n "$(find "$file" -mindepth 1 -print -quit)" ]; then
 
-        # Get the directory path of the file
+        # Get the directory path of the file.
         dir_path=$(dirname "$file")
 
-        # Create the corresponding directory structure in the output directory
+        # Create the corresponding directory structure in the output directory.
         mkdir -p "$OUTPUT_DIR$dir_path"
 
         # Directory is not empty, copy its contents recursively
@@ -188,6 +214,7 @@ copy_configuration_files() {
 
   # This section is part of the configuration files, it was made this way
   # since it contains symbolic links and many directories.
+
   # Copy contents of /etc/rc*.d directories while maintaining directory structure
   find /etc/rc*.d/ -type d -exec mkdir -p "$OUTPUT_DIR"/{} \;
   find /etc/rc*.d/ -type f -exec cp --parents {} "$OUTPUT_DIR" \;
@@ -218,12 +245,12 @@ copy_user_configuration_files() {
 }
 
 copy_important_logs() {
-    # Copies important logs.   
+    # Copies important logs from a list of log files/directories.
     for file in "${IMPORTANT_LOG_FILES[@]}"; do
         if [ -e "$file" ]; then
             if [ -d "$file" ]; then
 
-                # If it's a directory, copy its contents to the target directory
+                # If it's a directory, copy its contents to the target directory.
                 local target_dir="$OUTPUT_DIR$file"
                 if [ ! -d "$target_dir" ]; then
                     mkdir -p "$target_dir"
@@ -231,7 +258,7 @@ copy_important_logs() {
                 cp -R "$file"/* "$target_dir/"
             else
 
-                # Copy individual log file
+                # Copy individual log file.
                 local target_dir="$OUTPUT_DIR$(dirname "$file")"
                 mkdir -p "$target_dir"
                 cp "$file" "$target_dir"
@@ -257,6 +284,31 @@ traverse_procfs() {
           # Copy artifact to the destination directory
           if [ -f "$artifact_path" ]; then
               cp -p "$artifact_path" "$OUTPUT_DIR$artifact_path"
+          elif [ -d "$artifact_path" ]; then
+              for file in "$artifact_path"/*; do
+        
+                  # Checks if it's a regular file.
+                  if [ -f "$file" ]; then
+
+                    # Create artifact directory only if it contains regular files.
+                    mkdir -p "$OUTPUT_DIR$artifact_path"
+
+                    # Get the target file's path from a symbolic link
+                    target_path=$(readlink -f "$file")
+
+                    # Checks if original target path is not in blacklist.
+                    if check_if_value_in_blacklist "$target_path"; then
+                      # Extract the original file name from the path
+                      target_filename=$(basename "$target_path")
+                      
+                      # Copies the file while preserving directory structure and original file name.
+                      cp -p "$file" "$OUTPUT_DIR$artifact_path/$target_filename" 2> /dev/null
+                    fi
+                  elif [ -d "$file" ]; then
+                    cp -LR "$file" "$OUTPUT_DIR/$artifact_path"
+                  fi
+              done
+              #cp -LR "$artifact_path" "$OUTPUT_DIR$artifact_path"
           fi
       done
   done
@@ -275,7 +327,7 @@ traverse_procfs() {
 }
 
 generate_system_analysis_info(){
-  # System Information 
+  # System Analysis 
   ## Create System_Info directory
   mkdir -p "$SYSTEM_ANALYSIS"
   ## Run these commands to collect information
@@ -302,7 +354,7 @@ generate_system_analysis_info(){
 }
 
 generate_process_analysis_info() {
-  # Process Information
+  # Process Analysis
   ## Creates Process information directory
   mkdir -p "$PROCESS_ANALYSIS_DIR"
   ## Run these commands to collect information
@@ -312,7 +364,7 @@ generate_process_analysis_info() {
 }
 
 generate_network_analysis_info() {
-  # Network Information
+  # Network Analysis
   ## Creates Network information directory
   mkdir -p "$NETWORK_ANALYSIS_DIR"
   ## Run these commands to collect information
@@ -326,7 +378,7 @@ generate_network_analysis_info() {
 }
 
 generate_file_analysis_info() {
-  # File Information
+  # File Analysis
   ## Creates File information directory
   mkdir -p "$FILE_ANALYSIS_DIR"
   ## Run these commands to collect information about files
@@ -339,7 +391,7 @@ generate_file_analysis_info() {
 }
 
 generate_av_analysis_info() {
-  # AV & Security Sensors Information
+  # AV & Security Sensors Analysis
   ## Creates Security Sensors & AV information directory
   mkdir -p "$AV_ANALYSIS_DIR"
   # Run these commands to collect security sensors info
@@ -347,7 +399,7 @@ generate_av_analysis_info() {
 }
 
 generate_user_analysis_info() {
-  # User Information
+  # User Analysis
   ## Create User_Info directory
   mkdir -p "$USER_ANALYSIS_DIR"
   # Run these commands to collect user information
@@ -366,6 +418,7 @@ rm -rf "$OUTPUT_DIR"
 # Create the output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
+# This is first due to script activies being logged if not.
 # ================================ FILE ANALYSIS ===================================
 write_log "===== Starting Filesystem Information Acquisition        ====="
 generate_file_analysis_info
