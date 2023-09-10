@@ -68,6 +68,9 @@ SYSTEM_FILES=(
   "/etc/cron.weekly"
   "/etc/inittab"
   "/etc/modprobe.d"
+  "/etc/grub2.cfg"
+  "/etc/grub.d"
+  "/etc/default"
   "/boot/grub2/grub.cfg"
   "/etc/ld.so.conf"
   "/etc/ld.so.conf.d"
@@ -233,7 +236,9 @@ copy_important_logs() {
                 mkdir -p "$target_dir"
                 cp "$file" "$target_dir"
             fi
-        fi
+        else
+          write_log "File does not exist: $file"
+        fi    
     done
 }
 
@@ -362,61 +367,62 @@ rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 # ================================ FILE ANALYSIS ===================================
-write_log "===== Starting Filesystem Information Acquisition ====="
+write_log "===== Starting Filesystem Information Acquisition        ====="
 generate_file_analysis_info
-write_log "===== Done Filesystem Information Acquisition ====="
+write_log "===== Done Filesystem Information Acquisition            ====="
 
 # ================================ SYSTEM FILES ACQUISTION =========================
-write_log "===== Starting System Files Acquisition ====="
+write_log "===== Starting System Files Acquisition                  ====="
 copy_configuration_files
-write_log "===== Done System Files Acquisition ====="
+write_log "===== Done System Files Acquisition                      ====="
 
 # ================================ USER FILES ACQUISITION  =========================
-write_log "===== Starting User Configuration Files Acquisition ====="
+write_log "===== Starting User Configuration Files Acquisition      ====="
 copy_user_configuration_files
-write_log "===== Done User Configuration Files Acquisition ====="
+write_log "===== Done User Configuration Files Acquisition          ====="
 
 # ================================ LOG FILES ACQUISITION  ==========================
-write_log "===== Starting Log Files Acquisition ====="
+write_log "===== Starting Log Files Acquisition                     ====="
 copy_important_logs
-write_log "===== Done Log Files Acquisition ====="
+write_log "===== Done Log Files Acquisition                         ====="
 
 # ================================ PROCFS TRAVERSING ===============================
-write_log "===== Starting ProcFS Traversing ====="
+write_log "===== Starting ProcFS Traversing                         ====="
 traverse_procfs
-write_log "===== Done ProcFS Traversing ====="
+write_log "===== Done ProcFS Traversing                             ====="
 
 # ================================ SYSTEM ANALYSIS =================================
-write_log "===== Starting System Information Acquisition ====="
+write_log "===== Starting System Information Acquisition            ====="
 generate_system_analysis_info
-write_log "===== Done System Information Acquisition ====="
+write_log "===== Done System Information Acquisition                ====="
 
 # ================================ PROCESS ANALYSIS ================================
-write_log "===== Starting Process Information Acquisition ====="
+write_log "===== Starting Process Information Acquisition           ====="
 generate_process_analysis_info
-write_log "===== Done Process Information Acquisition ====="
+write_log "===== Done Process Information Acquisition               ====="
 
 # ================================ NETWORK ANALYSIS ================================
-write_log "===== Starting Network Information Acquisition ====="
+write_log "===== Starting Network Information Acquisition           ====="
 generate_network_analysis_info
-write_log "===== Done Network Information Acquisition ====="
+write_log "===== Done Network Information Acquisition               ====="
 
 # ================================ AV ANALYSIS =====================================
-write_log "===== Starting Security Sensors Information Acquisition ====="
+write_log "===== Starting Security Sensors Information Acquisition  ====="
 generate_av_analysis_info
-write_log "===== Done Security Sensors Information Acquisition ====="
+write_log "===== Done Security Sensors Information Acquisition      ====="
 
 # ================================ USER ANALYSIS ==================================
-write_log "===== Starting User Information Acquisition ====="
+write_log "===== Starting User Information Acquisition              ====="
 generate_user_analysis_info
-write_log "===== Done User Information Acquisition ====="
+write_log "===== Done User Information Acquisition                  ====="
 
 # End time
 END_TIME=$(date +%s)
 
 # Execution time
 ELAPSED_TIME=$((END_TIME - START_TIME))
-echo "$(date +"%Y-%m-%d %H:%M:%S") - Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR." >> "$LOGFILE"
+write_log "======================================================================================"
+write_log "Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR."
 
 # zip output directory -v is for verbose
 tar -czf "$ZIP_DIR/result.tar.gz" -C "$ZIP_DIR" result
