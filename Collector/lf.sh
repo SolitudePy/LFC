@@ -42,6 +42,7 @@ SYSTEM_FILES=(
   "/etc/environment.d"
   "/etc/profile"
   "/etc/profile.d"
+  "/etc/bashrc"
   "/etc/motd"
   "/etc/ntp.conf"
   "/etc/nsswitch.conf"
@@ -304,8 +305,6 @@ traverse_procfs() {
                       # Copies the file while preserving directory structure and original file name.
                       cp -p "$file" "$OUTPUT_DIR$artifact_path/$target_filename" 2> /dev/null
                     fi
-                  elif [ -d "$file" ]; then
-                    cp -LR "$file" "$OUTPUT_DIR/$artifact_path"
                   fi
               done
               #cp -LR "$artifact_path" "$OUTPUT_DIR$artifact_path"
@@ -415,7 +414,7 @@ generate_user_analysis_info() {
 # Deletes former output directory, just in case
 rm -rf "$OUTPUT_DIR"
 
-# Create the output directory if it doesn't exist
+# Create the output directory
 mkdir -p "$OUTPUT_DIR"
 
 # This is first due to script activies being logged if not.
@@ -481,4 +480,4 @@ write_log "Artifact collection completed in $ELAPSED_TIME seconds. Artifacts sav
 tar -czf "$ZIP_DIR/result.tar.gz" -C "$ZIP_DIR" result
 
 # Delete uncompressed output directory
-#rm -rf "$OUTPUT_DIR"
+rm -rf "$OUTPUT_DIR"
