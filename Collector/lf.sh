@@ -1,11 +1,48 @@
 #!/bin/bash
 
+# Function to display usage information
+usage() {
+    echo "Usage: $0 [OUTPUT_DIRECTORY]"
+    echo "  OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected."
+    echo "                    Default: /tmp/result"
+    echo ""
+    echo "Examples:"
+    echo "  $0             # Use default output directory (/tmp/result)"
+    echo "  $0 /var/output # Use custom output directory"
+    exit 1
+}
+
+# Parse command line arguments
+if [ "$#" -gt 1 ]; then
+    echo "Error: Too many arguments provided."
+    usage
+fi
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    usage
+fi
+
+# Set output directory (use argument if provided, otherwise default)
+OUTPUT_DIR="${1:-/tmp/result}"
+
+# Validate output directory path
+if [ -z "$OUTPUT_DIR" ]; then
+    echo "Error: Output directory cannot be empty."
+    exit 1
+fi
+
+# Check if script is running as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Error: This script must be run as root (use sudo)."
+    echo "Many forensic artifacts require root privileges to access."
+    exit 1
+fi
+
 # Start time
 START_TIME=$(date +%s)
 
-# Constant Variables
-OUTPUT_DIR="/tmp/result"
-ZIP_DIR="/tmp"
+# Constant Variables (derived from OUTPUT_DIR)
+ZIP_DIR="$(dirname "$OUTPUT_DIR")"
 LOGFILE="$OUTPUT_DIR/log_file.log"
 SYSTEM_ANALYSIS="$OUTPUT_DIR/System_Analysis"
 AV_ANALYSIS_DIR="$OUTPUT_DIR/AV_Analysis"
@@ -476,8 +513,10 @@ ELAPSED_TIME=$((END_TIME - START_TIME))
 write_log "======================================================================================"
 write_log "Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR."
 
-# zip output directory -v is for verbose
-tar -czf "$ZIP_DIR/result.tar.gz" -C "$ZIP_DIR" result
+# Create tar archive of the collected artifacts
+OUTPUT_BASENAME=$(basename "$OUTPUT_DIR")
+PARENT_DIR=$(dirname "$OUTPUT_DIR")
+tar -czf "$ZIP_DIR/${OUTPUT_BASENAME}.tar.gz" -C "$PARENT_DIR" "$OUTPUT_BASENAME"
 
 # Delete uncompressed output directory
 rm -rf "$OUTPUT_DIR"
