@@ -417,6 +417,10 @@ generate_file_analysis_info() {
   # File Analysis
   ## Creates File information directory
   mkdir -p "$FILE_ANALYSIS_DIR"
+  
+  # Generate bodyfile first to capture system state before any other file operations
+  generate_bodyfile
+  
   ## Run these commands to collect information about files
   find / -type f -not -path "/proc/*" -not -path "/sys/*" -mmin -$((recent_modified_files_threshold * 60)) -printf "%TY-%Tm-%Td %TH:%TM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_modified_files.txt"
   find / -type f -not -path "/proc/*" -not -path "/sys/*" -amin -$((recent_read_files_threshold * 60)) -printf "%AY-%Am-%Ad %AH:%AM,%p\n" 2>/dev/null > "$FILE_ANALYSIS_DIR/recent_accessed_files.txt"
@@ -424,9 +428,6 @@ generate_file_analysis_info() {
   find / -type f -executable -print0 2>/dev/null | xargs -0 sha256sum 2>/dev/null > "$FILE_ANALYSIS_DIR/executable_files_sha256.txt"
   lsof > "$FILE_ANALYSIS_DIR/open_files.txt" 2>/dev/null
   create_file_if_output_not_empty "find / -type d -name '\.*'" "$FILE_ANALYSIS_DIR/hidden_directories.txt"
-  
-  # Generate bodyfile as part of file analysis
-  generate_bodyfile
 }
 
 generate_av_analysis_info() {
