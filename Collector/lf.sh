@@ -482,16 +482,8 @@ generate_bodyfile() {
         mode_string="----------"
       fi
       
-      # Generate MD5 hash for regular files (skip for directories, links, etc.)
+      # Set MD5 hash to 0 for performance (hashes are calculated separately)
       md5_hash="0"
-      if [[ "$mode_string" =~ ^- ]]; then
-        # Only calculate MD5 for regular files smaller than 100MB to avoid performance issues
-        if [[ "$size" -lt 104857600 ]]; then
-          if md5_result=$(md5sum "$file" 2>/dev/null); then
-            md5_hash=$(echo "$md5_result" | cut -d' ' -f1)
-          fi
-        fi
-      fi
       
       # Output bodyfile entry
       # Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
