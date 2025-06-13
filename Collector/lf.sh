@@ -424,6 +424,9 @@ generate_file_analysis_info() {
   find / -type f -executable -print0 2>/dev/null | xargs -0 sha256sum 2>/dev/null > "$FILE_ANALYSIS_DIR/executable_files_sha256.txt"
   lsof > "$FILE_ANALYSIS_DIR/open_files.txt"
   create_file_if_output_not_empty "find / -type d -name '\.*'" "$FILE_ANALYSIS_DIR/hidden_directories.txt"
+  
+  # Generate bodyfile as part of file analysis
+  generate_bodyfile
 }
 
 generate_av_analysis_info() {
@@ -444,6 +447,59 @@ generate_user_analysis_info() {
   who -H  > "$USER_ANALYSIS_DIR/who.txt"
   w       > "$USER_ANALYSIS_DIR/w.txt"
 
+}
+
+generate_bodyfile() {
+  # Generate bodyfile - a timeline format containing file metadata
+  # Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
+  
+  write_log "Generating bodyfile (filesystem timeline)..."
+  
+  # Create bodyfile in File Analysis directory
+  local bodyfile_path="$FILE_ANALYSIS_DIR/bodyfile.txt"
+  
+  # Add header comment to bodyfile
+  echo "# Bodyfile generated on $(date)" > "$bodyfile_path"
+  echo "# Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime" >> "$bodyfile_path"
+  echo "# Times are in Unix epoch format" >> "$bodyfile_path"
+  
+  # Generate bodyfile using find with stat information
+  # Exclude /proc, /sys, and other virtual filesystems to avoid errors and reduce noise
+  find / \( -path "/proc" -o -path "/sys" -o -path "/dev" -o -path "/run" \) -prune -o -type f -print0 2>/dev/null | \
+  while IFS= read -r -d '' file; do
+    # Use stat to get detailed file information
+    if stat_output=$(stat -c "%i|%f|%u|%g|%s|%X|%Y|%Z" "$file" 2>/dev/null); then
+      # Parse stat output
+      IFS='|' read -r inode mode_hex uid gid size atime mtime ctime <<< "$stat_output"
+      
+      # Convert hex mode to octal permissions
+      mode_octal=$(printf "%o" "0x$mode_hex")
+      
+      # Get file type and permissions in ls -l format using ls command
+      if ls_output=$(ls -ld "$file" 2>/dev/null); then
+        mode_string=$(echo "$ls_output" | cut -c1-10)
+      else
+        mode_string="----------"
+      fi
+      
+      # Generate MD5 hash for regular files (skip for directories, links, etc.)
+      md5_hash="0"
+      if [[ "$mode_string" =~ ^- ]]; then
+        # Only calculate MD5 for regular files smaller than 100MB to avoid performance issues
+        if [[ "$size" -lt 104857600 ]]; then
+          if md5_result=$(md5sum "$file" 2>/dev/null); then
+            md5_hash=$(echo "$md5_result" | cut -d' ' -f1)
+          fi
+        fi
+      fi
+      
+      # Output bodyfile entry
+      # Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
+      echo "$md5_hash|$file|$inode|$mode_string|$uid|$gid|$size|$atime|$mtime|$ctime|0"
+    fi
+  done >> "$bodyfile_path"
+  
+  write_log "Bodyfile generated successfully"
 }
 
 # ===================== MAIN =====================
