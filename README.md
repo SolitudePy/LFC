@@ -1,4 +1,4 @@
-# Linux Forensics Collector
+# 🕵️ Linux Forensics Collector
 
 ## Background
 
