@@ -129,6 +129,7 @@ SYSTEM_FILES=(
 
 IMPORTANT_LOG_FILES=(
   "/var/log/secure"
+  "/var/log/auth.log"
   "/var/log/audit"
   "/var/log/boot.log"
   "/var/log/btmp"
