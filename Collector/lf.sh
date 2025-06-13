@@ -465,31 +465,8 @@ generate_bodyfile() {
   
   # Generate bodyfile using find with stat information
   # Exclude /proc, /sys, and other virtual filesystems to avoid errors and reduce noise
-  find / \( -path "/proc" -o -path "/sys" -o -path "/dev" -o -path "/run" \) -prune -o -type f -print0 2>/dev/null | \
-  while IFS= read -r -d '' file; do
-    # Use stat to get detailed file information
-    if stat_output=$(stat -c "%i|%f|%u|%g|%s|%X|%Y|%Z" "$file" 2>/dev/null); then
-      # Parse stat output
-      IFS='|' read -r inode mode_hex uid gid size atime mtime ctime <<< "$stat_output"
-      
-      # Convert hex mode to octal permissions
-      mode_octal=$(printf "%o" "0x$mode_hex")
-      
-      # Get file type and permissions in ls -l format using ls command
-      if ls_output=$(ls -ld "$file" 2>/dev/null); then
-        mode_string=$(echo "$ls_output" | cut -c1-10)
-      else
-        mode_string="----------"
-      fi
-      
-      # Set MD5 hash to 0 for performance (hashes are calculated separately)
-      md5_hash="0"
-      
-      # Output bodyfile entry
-      # Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
-      echo "$md5_hash|$file|$inode|$mode_string|$uid|$gid|$size|$atime|$mtime|$ctime|0"
-    fi
-  done >> "$bodyfile_path"
+  # Use find's -printf to get most information directly, avoiding multiple command calls per file
+  find / \( -path "/proc" -o -path "/sys" -o -path "/dev" -o -path "/run" \) -prune -o -type f -printf "0|%p|%i|%M|%u|%g|%s|%A@|%T@|%C@|0\n" 2>/dev/null >> "$bodyfile_path"
   
   write_log "Bodyfile generated successfully"
 }
