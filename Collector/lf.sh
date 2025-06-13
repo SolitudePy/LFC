@@ -466,7 +466,8 @@ generate_bodyfile() {
   # Generate bodyfile using find with stat information
   # Exclude /proc, /sys, and other virtual filesystems to avoid errors and reduce noise
   # Use find's -printf to get most information directly, avoiding multiple command calls per file
-  find / \( -path "/proc" -o -path "/sys" -o -path "/dev" -o -path "/run" \) -prune -o -type f -printf "0|%p|%i|%M|%u|%g|%s|%A@|%T@|%C@|0\n" 2>/dev/null >> "$bodyfile_path"
+  find / \( -path "/proc" -o -path "/sys" -o -path "/dev" -o -path "/run" \) -prune -o -type f -printf "0|%p|%i|%M|%U|%G|%s|%A@|%T@|%C@|0\n" 2>/dev/null | \
+  sed 's/\([0-9]\+\)\.[0-9]*/\1/g' >> "$bodyfile_path"
   
   write_log "Bodyfile generated successfully"
 }
