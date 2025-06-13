@@ -160,5 +160,5 @@ cython_debug/
 #.idea/
 
 # private
-lfc/useful_commands.sh
+LFC/useful_commands.sh
 /Processor/

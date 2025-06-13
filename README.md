@@ -31,17 +31,17 @@ This tool is particularly useful for:
 
 **Run with default output directory (`/tmp/result`):**
 ```bash
-sudo ./lf.sh
+sudo ./LFC.SH
 ```
 
 **Run with custom output directory:**
 ```bash
-sudo ./lf.sh /path/to/output/directory
+sudo ./LFC.SH /path/to/output/directory
 ```
 
 **Display help:**
 ```bash
-./lf.sh --help
+./LFC.SH --help
 ```
 
 ### Example Collection Session
@@ -51,10 +51,10 @@ sudo ./lf.sh /path/to/output/directory
 cd /path/to/LinuxForensics/Collector
 
 # Make the script executable (if needed)
-chmod +x lf.sh
+chmod +x LFC.SH
 
 # Run the collector with custom output directory
-sudo ./lf.sh /forensics/case-001
+sudo ./LFC.SH /forensics/case-001
 
 # The script will create and populate the directory structure:
 # /forensics/case-001/
