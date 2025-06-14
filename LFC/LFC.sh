@@ -325,7 +325,8 @@ copy_important_logs() {
             else
 
                 # Copy individual log file.
-                local target_dir="$OUTPUT_DIR$(dirname "$file")"
+                local target_dir
+                target_dir="$OUTPUT_DIR$(dirname "$file")"
                 mkdir -p "$target_dir"
                 cp "$file" "$target_dir"
             fi
