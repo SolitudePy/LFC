@@ -566,10 +566,11 @@ run_osquery_collection() {
 
       outfile="$OSQUERY_ANALYSIS_DIR/${filename_base}.$OSQUERY_OUTPUT_FORMAT"
       write_log "Running osquery: $query -> $outfile"
-      if echo "$query" | "$OSQUERY_PATH" --"$OSQUERY_OUTPUT_FORMAT" > "$outfile"; then
+      # Redirect osqueryi stderr to the main log file
+      if echo "$query" | "$OSQUERY_PATH" --"$OSQUERY_OUTPUT_FORMAT" > "$outfile" 2>> "$LOGFILE"; then
         write_log "Successfully executed: $query"
       else
-        write_log "Error executing osquery: $query. Exit code: $?. Output file $outfile may be empty or incomplete."
+        write_log "Error executing osquery: $query. Exit code: $?. Output file $outfile may be empty or incomplete. Check $LOGFILE for osquery error messages."
         # Optionally remove empty/failed output file
         [ ! -s "$outfile" ] && rm -f "$outfile"
       fi
