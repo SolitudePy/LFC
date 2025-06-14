@@ -2,28 +2,47 @@
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [OUTPUT_DIRECTORY]"
+    echo "Usage: $0 [OUTPUT_DIRECTORY] [--no-osquery]"
     echo "  OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected."
     echo "                    Default: /tmp/result"
+    echo "  --no-osquery:     Optional. Skip osquery collection."
     echo ""
     echo "Examples:"
-    echo "  $0             # Use default output directory (/tmp/result)"
-    echo "  $0 /var/output # Use custom output directory"
+    echo "  $0             # Use default output directory (/tmp/result) and run osquery"
+    echo "  $0 /var/output # Use custom output directory and run osquery"
+    echo "  $0 --no-osquery # Use default output directory and skip osquery"
+    echo "  $0 /var/output --no-osquery # Use custom output directory and skip osquery"
     exit 1
 }
 
 # Parse command line arguments
-if [ "$#" -gt 1 ]; then
-    echo "Error: Too many arguments provided."
-    usage
-fi
+SKIP_OSQUERY=false
+TEMP_OUTPUT_DIR=""
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    usage
-fi
+for arg in "$@"; do
+    case $arg in
+        -h|--help)
+        usage
+        ;;
+        --no-osquery)
+        SKIP_OSQUERY=true
+        shift # Remove --no-osquery from processing
+        ;;
+        *)
+        # If an argument is not a flag, and TEMP_OUTPUT_DIR is not set, it's the output directory
+        if [[ ! "$arg" =~ ^- ]] && [ -z "$TEMP_OUTPUT_DIR" ]; then
+            TEMP_OUTPUT_DIR="$arg"
+        # If it's an unknown flag or a second positional argument
+        elif [[ "$arg" =~ ^- ]] || [ -n "$TEMP_OUTPUT_DIR" ]; then
+            echo "Error: Too many arguments provided or invalid argument: $arg"
+            usage
+        fi
+        ;;
+    esac
+done
 
 # Set output directory (use argument if provided, otherwise default)
-OUTPUT_DIR="${1:-/tmp/result}"
+OUTPUT_DIR="${TEMP_OUTPUT_DIR:-/tmp/result}"
 
 # Validate output directory path
 if [ -z "$OUTPUT_DIR" ]; then
@@ -50,6 +69,11 @@ USER_ANALYSIS_DIR="$OUTPUT_DIR/User_Analysis"
 FILE_ANALYSIS_DIR="$OUTPUT_DIR/File_Analysis"
 NETWORK_ANALYSIS_DIR="$OUTPUT_DIR/Network_Analysis"
 PROCESS_ANALYSIS_DIR="$OUTPUT_DIR/Process_Analysis"
+OSQUERY_ANALYSIS_DIR="$OUTPUT_DIR/osquery" # New directory for osquery results
+
+# osquery settings
+OSQUERY_PATH="/usr/bin/osqueryi" # Default path to osqueryi, adjust if needed
+OSQUERY_OUTPUT_FORMAT="json" # Output format for osquery: json, csv, etc.
 
 recent_modified_files_threshold=24 # Time threshold in hours for recent modified files.
 recent_read_files_threshold=24 # Time threshold in hours for recent read files.
@@ -179,6 +203,7 @@ PROC_IMPORTANT_FILES=(
 BLACKLIST_FILE_DESCRIPTORS=(
   "/var/lib/sss/mc/"
   "/run/log/journal/"
+  "$OUTPUT_DIR" # Add output directory to blacklist to avoid recursion if it's under /
 )
 
 create_file_if_output_not_empty() {
@@ -474,6 +499,76 @@ generate_bodyfile() {
   write_log "Bodyfile generated successfully"
 }
 
+# ===================== OSQUERY COLLECTION =====================
+run_osquery_collection() {
+    if [ "$SKIP_OSQUERY" = true ]; then
+        write_log "Skipping osquery collection as per user request."
+        return
+    fi
+
+    if ! command -v "$OSQUERY_PATH" &> /dev/null; then
+        write_log "Error: osqueryi not found at $OSQUERY_PATH. Skipping osquery collection."
+        echo "Error: osqueryi not found at $OSQUERY_PATH. Please install osquery or provide the correct path."
+        return
+    fi
+
+    write_log "===== Starting osquery Collection                      ====="
+    mkdir -p "$OSQUERY_ANALYSIS_DIR"
+
+    # Declare associative array: "query" => "output filename"
+    # Using a simple array for query and filename pairs for broader compatibility (e.g. older bash)
+    # Each pair is: "Query string" "output_filename_without_extension"
+    local queries_and_files=(
+      "SELECT * FROM users;" "users"
+      "SELECT * FROM rpm_packages;" "rpm_packages"
+      "SELECT p.path, p.name, p.cmdline, p.on_disk, p.uid, u.username, h.md5, h.sha1, h.sha256 FROM processes AS p LEFT JOIN hash AS h ON p.path = h.path LEFT JOIN users AS u ON p.uid = u.uid;" "processes"
+      "SELECT * FROM startup_items;" "startup_items"
+      "SELECT * FROM systemd_units;" "systemd_units"
+      "SELECT * FROM crontab;" "crontab"
+      "SELECT * FROM etc_hosts;" "etc_hosts"
+      "SELECT * FROM kernel_modules;" "kernel_modules"
+      "SELECT * FROM mounts;" "mounts"
+      "SELECT * FROM suid_bin;" "suid_bin"
+      "SELECT * FROM arp_cache;" "arp_cache"
+      "SELECT * FROM yum_sources;" "yum_sources"
+      "SELECT * FROM apt_sources;" "apt_sources"
+      "SELECT * FROM dns_resolvers;" "dns_resolvers"
+      "SELECT DISTINCT p.pid, p.name AS process_name, p.cmdline AS command_line, p.uid AS user_id, u.username AS username, s.local_address, s.local_port, s.remote_address, s.remote_port, s.path FROM process_open_sockets AS s LEFT JOIN processes AS p ON s.pid = p.pid LEFT JOIN users AS u ON p.uid = u.uid;" "process_open_sockets"
+      "SELECT DISTINCT o.path AS file, o.pid, p.name AS process_name, p.cmdline, p.uid, u.username FROM process_open_files AS o LEFT JOIN processes AS p ON o.pid = p.pid LEFT JOIN users AS u ON p.uid = u.uid;" "process_open_files"
+      "SELECT a.key_file, a.key, a.algorithm, u.uid, u.username FROM users AS u LEFT JOIN authorized_keys AS a ON u.uid = a.uid;" "authorized_keys"
+      "SELECT * FROM interface_addresses;" "interface_addresses"
+      "SELECT * FROM interface_details;" "interface_details"
+      "SELECT * FROM kernel_info;" "kernel_info"
+      "SELECT * FROM last;" "last_logins"
+      "SELECT * FROM logged_in_users;" "logged_in_users"
+      "SELECT * FROM os_version;" "os_version"
+      "SELECT * FROM users JOIN shell_history using(uid);" "shell_history"
+      "SELECT * FROM system_controls;" "system_controls"
+      "SELECT * FROM uptime;" "uptime"
+      # Add more queries as needed
+    )
+
+    # Loop through and run each query
+    i=0
+    while [ $i -lt ${#queries_and_files[@]} ]; do
+      query="${queries_and_files[$i]}"
+      i=$((i + 1))
+      filename_base="${queries_and_files[$i]}"
+      i=$((i + 1))
+
+      outfile="$OSQUERY_ANALYSIS_DIR/${filename_base}.$OSQUERY_OUTPUT_FORMAT"
+      write_log "Running osquery: $query -> $outfile"
+      if echo "$query" | "$OSQUERY_PATH" --"$OSQUERY_OUTPUT_FORMAT" > "$outfile"; then
+        write_log "Successfully executed: $query"
+      else
+        write_log "Error executing osquery: $query. Exit code: $?. Output file $outfile may be empty or incomplete."
+        # Optionally remove empty/failed output file
+        [ ! -s "$outfile" ] && rm -f "$outfile"
+      fi
+    done
+    write_log "===== Done osquery Collection                          ====="
+}
+
 # ===================== MAIN =====================
 
 # Deletes former output directory, just in case
@@ -482,7 +577,10 @@ rm -rf "$OUTPUT_DIR"
 # Create the output directory
 mkdir -p "$OUTPUT_DIR"
 
-# This is first due to script activies being logged if not.
+# Run osquery collection first if not skipped
+run_osquery_collection
+
+# This is first usually due to script activies being logged if not.
 # ================================ FILE ANALYSIS ===================================
 write_log "===== Starting Filesystem Information Acquisition        ====="
 generate_file_analysis_info
