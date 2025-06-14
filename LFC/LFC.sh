@@ -223,7 +223,8 @@ create_file_if_output_not_empty() {
 write_log() {
   # Writes a log message to a log file.
   local message="$1"
-  local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+  local timestamp
+  timestamp=$(date +"%Y-%m-%d %H:%M:%S")
   echo "[$timestamp] - $message" >> "$LOGFILE"
 }
 
@@ -247,7 +248,7 @@ check_if_value_in_blacklist() {
 copy_configuration_files() {
   # Copy configuration files from a list of configuration files.
   for file in "${SYSTEM_FILES[@]}"; do
-    if [ -f "$file" -a -s "$file" ]; then
+    if [ -f "$file" ] && [ -s "$file" ]; then
       # Get the directory path of the file
       dir_path=$(dirname "$file")
 
@@ -290,7 +291,7 @@ copy_configuration_files() {
 
 copy_user_configuration_files() {
   # Copy user configuration files while maintaining directory structure
-  while IFS=: read -r user _ _ _ _ home _; do
+  while IFS=: read -r _ _ _ _ _ home _; do
     if [ -d "$home" ]; then
 
       # Loops through list of user config files
@@ -315,7 +316,8 @@ copy_important_logs() {
             if [ -d "$file" ]; then
 
                 # If it's a directory, copy its contents to the target directory.
-                local target_dir="$OUTPUT_DIR$file"
+                local target_dir
+                target_dir="$OUTPUT_DIR$file"
                 if [ ! -d "$target_dir" ]; then
                     mkdir -p "$target_dir"
                 fi
@@ -335,7 +337,9 @@ copy_important_logs() {
 
 traverse_procfs() {
   # Traverse /proc and copy files from each process directory
-  for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+  for pid_dir in /proc/[0-9]*; do
+    if [ -d "$pid_dir" ]; then # Ensure it's a directory
+      pid=$(basename "$pid_dir")
       process_dir="/proc/$pid"
 
       # Create corresponding process directory in the destination directory
@@ -373,6 +377,7 @@ traverse_procfs() {
               #cp -LR "$artifact_path" "$OUTPUT_DIR$artifact_path"
           fi
       done
+    fi
   done
 
   # Iterate over the important files and copy them while maintaining directory structure
@@ -486,9 +491,11 @@ generate_bodyfile() {
   local bodyfile_path="$FILE_ANALYSIS_DIR/bodyfile.txt"
   
   # Add header comment to bodyfile
-  echo "# Bodyfile generated on $(date)" > "$bodyfile_path"
-  echo "# Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime" >> "$bodyfile_path"
-  echo "# Times are in Unix epoch format" >> "$bodyfile_path"
+  {
+    echo "# Bodyfile generated on $(date)"
+    echo "# Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime"
+    echo "# Times are in Unix epoch format"
+  } >> "$bodyfile_path"
   
   # Generate bodyfile using find with stat information
   # Exclude /proc, /sys, and other virtual filesystems to avoid errors and reduce noise
