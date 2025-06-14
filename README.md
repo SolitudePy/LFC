@@ -22,6 +22,7 @@ https://github.com/SolitudePy/LinuxForensicsLearn
 - 🌐 **Thorough Network Forensics**: Captures network interface configurations, active connections, routing tables, firewall rules, and socket information.
 - ⏱️ **Timeline Generation**: Creates a TSK v3 compatible bodyfile for chronological event analysis.
 - 🔒 **Executable Integrity Verification**: Performs SHA256 hashing of all executable files to ensure integrity.
+- 🛡️ **Osquery Integration**: Leverages [osquery](https://github.com/osquery/osquery) for flexible and structured system data collection.
 
 
 ## Quick Usage
@@ -30,17 +31,23 @@ https://github.com/SolitudePy/LinuxForensicsLearn
 - Root privileges (required for accessing protected files and directories)
 - Sufficient disk space for collected artifacts
 - Standard Linux utilities (find, ps, netstat, etc.)
+- `osqueryi` (optional)
 
 ### Basic Usage
 
-**Run with default output directory (`/tmp/result`):**
+**Run with default output directory (`/tmp/result`) and include osquery:**
 ```bash
 sudo ./LFC.SH
 ```
 
-**Run with custom output directory:**
+**Run with custom output directory and include osquery:**
 ```bash
 sudo ./LFC.SH /path/to/output/directory
+```
+
+**Run with default output directory and skip osquery:**
+```bash
+sudo ./LFC.SH --no-osquery
 ```
 
 **Display help:**
@@ -57,12 +64,16 @@ cd /path/to/LinuxForensics/Collector
 # Make the script executable (if needed)
 chmod +x LFC.SH
 
-# Run the collector with custom output directory
+# Run the collector with custom output directory (includes osquery by default)
 sudo ./LFC.SH /forensics/case-001
 
 # The script will create and populate the directory structure:
 # /forensics/case-001/
 # ├── log_file.log
+# ├── osquery/
+# │   ├── users.json
+# │   ├── processes.json
+# │   └── ... (other osquery results)
 # ├── System_Analysis/
 # ├── Process_Analysis/
 # ├── Network_Analysis/
@@ -75,7 +86,7 @@ sudo ./LFC.SH /forensics/case-001
 # After completion, a compressed archive will be created:
 # /forensics/case-001.tar.gz
 
-# Extracting results
+# Unarchive results
 tar -xzvf /forensics/case-001.tar.gz -C /tmp
 ```
 
