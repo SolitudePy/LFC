@@ -10,6 +10,10 @@ This tool is particularly useful for:
 - **Security Auditing**: Baseline system state documentation
 - **Threat Hunting**: Proactive search for indicators of compromise
 
+## Learning
+For comprehensive learning, you can refer to my Linux Forensics study guide here:
+https://github.com/SolitudePy/LinuxForensicsLearn
+
 ## Features
 
 - 🚀 **Rapid Execution**: Ensures timely data acquisition during critical incidents.
