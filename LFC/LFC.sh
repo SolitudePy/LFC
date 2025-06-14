@@ -222,10 +222,11 @@ create_file_if_output_not_empty() {
 
 write_log() {
   # Writes a log message to a log file.
-  local message="$1"
+  local level="$1"
+  local message="$2"
   local timestamp
   timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-  echo "[$timestamp] - $message" >> "$LOGFILE"
+  echo "[$timestamp] [$level] - $message" >> "$LOGFILE"
 }
 
 check_if_value_in_blacklist() {
@@ -273,7 +274,7 @@ copy_configuration_files() {
         cp -pR "$file" "$OUTPUT_DIR$file"
       fi
     else
-      write_log "File or directory does not exist or empty: $file"
+      write_log "WARNING" "File or directory does not exist or empty: $file"
     fi
   done
 
@@ -302,7 +303,7 @@ copy_user_configuration_files() {
           mkdir -p "$target_dir"
           cp -p "$home/$file" "$target_file"
         else
-          write_log "File does not exist: $home/$file"
+          write_log "WARNING" "File does not exist: $home/$file"
         fi
       done
     fi
@@ -331,7 +332,7 @@ copy_important_logs() {
                 cp "$file" "$target_dir"
             fi
         else
-          write_log "File does not exist: $file"
+          write_log "WARNING" "File does not exist: $file"
         fi    
     done
 }
@@ -486,7 +487,7 @@ generate_bodyfile() {
   # Generate bodyfile - a timeline format containing file metadata
   # Format: MD5|name|inode|mode_as_string|UID|GID|size|atime|mtime|ctime|crtime
   
-  write_log "Generating bodyfile (filesystem timeline)..."
+  write_log "INFO" "Generating bodyfile (filesystem timeline)..."
   
   # Create bodyfile in File Analysis directory
   local bodyfile_path="$FILE_ANALYSIS_DIR/bodyfile.txt"
@@ -502,25 +503,25 @@ generate_bodyfile() {
   # Exclude /proc, /sys, and other virtual filesystems to avoid errors and reduce noise
   # Use find's -printf to get most information directly, avoiding multiple command calls per file
   find / \( -path "/proc" -o -path "/sys" -o -path "/dev" -o -path "/run" \) -prune -o -type f -printf "0|%p|%i|%M|%U|%G|%s|%A@|%T@|%C@|0\n" 2>/dev/null | \
-  sed 's/\([0-9]\+\)\.[0-9]*/\1/g' >> "$bodyfile_path"
+  sed 's/\\([0-9]\\+\\)\\.[0-9]*/\\1/g' >> "$bodyfile_path"
   
-  write_log "Bodyfile generated successfully"
+  write_log "INFO" "Bodyfile generated successfully"
 }
 
 # ===================== OSQUERY COLLECTION =====================
 run_osquery_collection() {
     if [ "$SKIP_OSQUERY" = true ]; then
-        write_log "Skipping osquery collection as per user request."
+        write_log "INFO" "Skipping osquery collection as per user request."
         return
     fi
 
     if ! command -v "$OSQUERY_PATH" &> /dev/null; then
-        write_log "Error: osqueryi not found at $OSQUERY_PATH. Skipping osquery collection."
-        echo "Error: osqueryi not found at $OSQUERY_PATH. Please install osquery or provide the correct path."
+        write_log "WARNING" "osqueryi not found at $OSQUERY_PATH. Skipping osquery collection."
+        write_log "WARNING" "Please install osquery or adjust OSQUERY_PATH variable in the script."
         return
     fi
 
-    write_log "===== Starting osquery Collection                      ====="
+    write_log "INFO" "===== Starting osquery Collection                      ====="
     mkdir -p "$OSQUERY_ANALYSIS_DIR"
 
     # Declare associative array: "query" => "output filename"
@@ -565,17 +566,17 @@ run_osquery_collection() {
       i=$((i + 1))
 
       outfile="$OSQUERY_ANALYSIS_DIR/${filename_base}.$OSQUERY_OUTPUT_FORMAT"
-      write_log "Running osquery: $query -> $outfile"
+      write_log "INFO" "Running osquery: $query -> $outfile"
       # Redirect osqueryi stderr to the main log file
       if echo "$query" | "$OSQUERY_PATH" --"$OSQUERY_OUTPUT_FORMAT" > "$outfile" 2>> "$LOGFILE"; then
-        write_log "Successfully executed: $query"
+        write_log "INFO" "Successfully executed: $query"
       else
-        write_log "Error executing osquery: $query. Exit code: $?. Output file $outfile may be empty or incomplete. Check $LOGFILE for osquery error messages."
+        write_log "ERROR" "Error executing osquery: $query. Exit code: $?. Output file $outfile may be empty or incomplete. Check $LOGFILE for osquery error messages."
         # Optionally remove empty/failed output file
         [ ! -s "$outfile" ] && rm -f "$outfile"
       fi
     done
-    write_log "===== Done osquery Collection                          ====="
+    write_log "INFO" "===== Done osquery Collection                          ====="
 }
 
 # ===================== MAIN =====================
@@ -591,62 +592,62 @@ run_osquery_collection
 
 # This is first usually due to script activies being logged if not.
 # ================================ FILE ANALYSIS ===================================
-write_log "===== Starting Filesystem Information Acquisition        ====="
+write_log "INFO" "===== Starting Filesystem Information Acquisition        ====="
 generate_file_analysis_info
-write_log "===== Done Filesystem Information Acquisition            ====="
+write_log "INFO" "===== Done Filesystem Information Acquisition            ====="
 
 # ================================ SYSTEM FILES ACQUISTION =========================
-write_log "===== Starting System Files Acquisition                  ====="
+write_log "INFO" "===== Starting System Files Acquisition                  ====="
 copy_configuration_files
-write_log "===== Done System Files Acquisition                      ====="
+write_log "INFO" "===== Done System Files Acquisition                      ====="
 
 # ================================ USER FILES ACQUISITION  =========================
-write_log "===== Starting User Configuration Files Acquisition      ====="
+write_log "INFO" "===== Starting User Configuration Files Acquisition      ====="
 copy_user_configuration_files
-write_log "===== Done User Configuration Files Acquisition          ====="
+write_log "INFO" "===== Done User Configuration Files Acquisition          ====="
 
 # ================================ LOG FILES ACQUISITION  ==========================
-write_log "===== Starting Log Files Acquisition                     ====="
+write_log "INFO" "===== Starting Log Files Acquisition                     ====="
 copy_important_logs
-write_log "===== Done Log Files Acquisition                         ====="
+write_log "INFO" "===== Done Log Files Acquisition                         ====="
 
 # ================================ PROCFS TRAVERSING ===============================
-write_log "===== Starting ProcFS Traversing                         ====="
+write_log "INFO" "===== Starting ProcFS Traversing                         ====="
 traverse_procfs
-write_log "===== Done ProcFS Traversing                             ====="
+write_log "INFO" "===== Done ProcFS Traversing                             ====="
 
 # ================================ SYSTEM ANALYSIS =================================
-write_log "===== Starting System Information Acquisition            ====="
+write_log "INFO" "===== Starting System Information Acquisition            ====="
 generate_system_analysis_info
-write_log "===== Done System Information Acquisition                ====="
+write_log "INFO" "===== Done System Information Acquisition                ====="
 
 # ================================ PROCESS ANALYSIS ================================
-write_log "===== Starting Process Information Acquisition           ====="
+write_log "INFO" "===== Starting Process Information Acquisition           ====="
 generate_process_analysis_info
-write_log "===== Done Process Information Acquisition               ====="
+write_log "INFO" "===== Done Process Information Acquisition               ====="
 
 # ================================ NETWORK ANALYSIS ================================
-write_log "===== Starting Network Information Acquisition           ====="
+write_log "INFO" "===== Starting Network Information Acquisition           ====="
 generate_network_analysis_info
-write_log "===== Done Network Information Acquisition               ====="
+write_log "INFO" "===== Done Network Information Acquisition               ====="
 
 # ================================ AV ANALYSIS =====================================
-write_log "===== Starting Security Sensors Information Acquisition  ====="
+write_log "INFO" "===== Starting Security Sensors Information Acquisition  ====="
 generate_av_analysis_info
-write_log "===== Done Security Sensors Information Acquisition      ====="
+write_log "INFO" "===== Done Security Sensors Information Acquisition      ====="
 
 # ================================ USER ANALYSIS ==================================
-write_log "===== Starting User Information Acquisition              ====="
+write_log "INFO" "===== Starting User Information Acquisition              ====="
 generate_user_analysis_info
-write_log "===== Done User Information Acquisition                  ====="
+write_log "INFO" "===== Done User Information Acquisition                  ====="
 
 # End time
 END_TIME=$(date +%s)
 
 # Execution time
 ELAPSED_TIME=$((END_TIME - START_TIME))
-write_log "======================================================================================"
-write_log "Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR."
+write_log "INFO" "======================================================================================"
+write_log "INFO" "Artifact collection completed in $ELAPSED_TIME seconds. Artifacts saved in $OUTPUT_DIR."
 
 # Create tar archive of the collected artifacts
 OUTPUT_BASENAME=$(basename "$OUTPUT_DIR")
