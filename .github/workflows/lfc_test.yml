@@ -22,14 +22,7 @@ jobs:
           OUTPUT_DIR="/tmp/lfc_output"
           TARBALL="/tmp/lfc_output.tar.gz"
           EXTRACT_DIR="/tmp/extracted_output"
-
-          echo "--- Running LFC.sh ---"
           sudo ./LFC/LFC.sh "$OUTPUT_DIR"
-
-          echo "--- Creating tarball ---"
-          tar -czf "$TARBALL" -C "$(dirname "$OUTPUT_DIR")" "$(basename "$OUTPUT_DIR")"
-
-          echo "--- Extracting tarball ---"
           mkdir -p "$EXTRACT_DIR"
           tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
 
