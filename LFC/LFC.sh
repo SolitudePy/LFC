@@ -137,6 +137,7 @@ SYSTEM_FILES=(
   "/boot/grub2/grub.cfg"
   "/etc/ld.so.conf"
   "/etc/ld.so.conf.d"
+  "/etc/ld.so.preload"
   "/etc/systemd/system"
   "/usr/lib/systemd/system"
   "/usr/lib/systemd/system-generators"
