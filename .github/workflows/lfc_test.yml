@@ -18,6 +18,13 @@ jobs:
           echo "--- Listing /tmp before running LFC.sh ---"
           ls -lh /tmp
 
+      - name: Start log tailing in background
+        run: |
+          mkdir -p /tmp/lfc_output
+          touch /tmp/lfc_output/log_file.log
+          tail -F /tmp/lfc_output/log_file.log &
+          echo $! > /tmp/tail_pid
+
       - name: Make LFC.sh executable
         run: chmod +x LFC/LFC.sh
 
@@ -55,3 +62,8 @@ jobs:
             ls -R "$EXTRACT_DIR"
             exit 1
           fi
+
+      - name: Stop log tailing
+        if: always()
+        run: |
+          kill $(cat /tmp/tail_pid) || true
