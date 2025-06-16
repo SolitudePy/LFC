@@ -114,6 +114,7 @@ SYSTEM_FILES=(
   "/etc/hosts.allow"
   "/etc/hosts.deny"
   "/etc/rc.local"
+  '/etc/rc.d'
   "/etc/nginx"
   "/etc/httpd"
   "/etc/mysql"
@@ -129,6 +130,8 @@ SYSTEM_FILES=(
   "/etc/cron.hourly"
   "/etc/cron.monthly"
   "/etc/cron.weekly"
+  "/etc/cron.allow"
+  "/etc/cron.deny"
   "/etc/inittab"
   "/etc/modprobe.d"
   "/etc/grub2.cfg"
