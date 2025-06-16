@@ -13,6 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Debug output directory and tarball
+        run: |
+          echo "--- Listing /tmp before running LFC.sh ---"
+          ls -lh /tmp
+
       - name: Make LFC.sh executable
         run: chmod +x LFC/LFC.sh
 
@@ -22,13 +27,22 @@ jobs:
           OUTPUT_DIR="/tmp/lfc_output"
           TARBALL="/tmp/lfc_output.tar.gz"
           EXTRACT_DIR="/tmp/extracted_output"
+          echo "--- Running LFC.sh ---"
           sudo ./LFC/LFC.sh "$OUTPUT_DIR"
+          echo "--- Listing /tmp after running LFC.sh ---"
+          ls -lh /tmp
+          echo "--- Listing output directory ---"
+          ls -lh "$OUTPUT_DIR" || true
+          echo "--- Checking tarball existence ---"
+          ls -lh "$TARBALL" || true
           mkdir -p "$EXTRACT_DIR"
+          echo "--- Extracting tarball ---"
           tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
 
           LOG_FILE_PATH="$EXTRACT_DIR/$(basename "$OUTPUT_DIR")/log_file.log"
           if [ -f "$LOG_FILE_PATH" ]; then
-            echo "log_file.log found."
+            echo "log_file.log found. Showing last 20 lines:"
+            tail -20 "$LOG_FILE_PATH"
             if grep -q "Artifact collection completed" "$LOG_FILE_PATH"; then
               echo "Artifact collection completed message found in log."
             else
@@ -37,7 +51,7 @@ jobs:
               exit 1
             fi
           else
-            echo "Error: log_file.log not found."
+            echo "Error: log_file.log not found. Directory tree:"
             ls -R "$EXTRACT_DIR"
             exit 1
           fi
