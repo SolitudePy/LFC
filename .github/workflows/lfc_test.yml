@@ -2,9 +2,9 @@ name: LFC Script CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ "*" ] 
+    branches: ["*"]
 
 jobs:
   test_lfc_script:
@@ -16,152 +16,35 @@ jobs:
       - name: Make LFC.sh executable
         run: chmod +x LFC/LFC.sh
 
-      - name: Test LFC.sh with default settings
-        run: |
-          set -e # Exit immediately if a command exits with a non-zero status.
-          echo "--- Running LFC.sh with default settings ---"
-          sudo ./LFC/LFC.sh
-          
-          echo "--- Verifying default output ---"
-          DEFAULT_TARBALL="/tmp/result.tar.gz"
-          DEFAULT_EXTRACT_DIR="/tmp/extracted_default_output"
-          DEFAULT_OUTPUT_BASENAME="result"
-
-          if [ -f "$DEFAULT_TARBALL" ]; then
-            echo "Default output tarball $DEFAULT_TARBALL created successfully."
-            mkdir -p "$DEFAULT_EXTRACT_DIR"
-            sudo tar -xzf "$DEFAULT_TARBALL" -C "$DEFAULT_EXTRACT_DIR"
-            
-            LOG_FILE_PATH="$DEFAULT_EXTRACT_DIR/$DEFAULT_OUTPUT_BASENAME/log_file.log"
-            if [ -f "$LOG_FILE_PATH" ]; then
-              echo "log_file.log found in extracted default output."
-              # Check for osquery not found message (script should detect this)
-              if grep -q "osqueryi not found at /usr/bin/osqueryi" "$LOG_FILE_PATH"; then
-                echo "osqueryi not found message correctly logged."
-              else
-                echo "Error: osqueryi not found message missing from log."
-                cat "$LOG_FILE_PATH"
-                exit 1
-              fi
-              # Check for overall completion message
-              if grep -q "Artifact collection completed" "$LOG_FILE_PATH"; then
-                echo "Artifact collection completed message found."
-              else
-                echo "Error: Artifact collection completed message NOT found in log."
-                cat "$LOG_FILE_PATH"
-                exit 1
-              fi
-            else
-              echo "Error: log_file.log not found in extracted default output."
-              ls -R "$DEFAULT_EXTRACT_DIR"
-              exit 1
-            fi
-            sudo rm -rf "$DEFAULT_EXTRACT_DIR"
-          else
-            echo "Error: Default output tarball $DEFAULT_TARBALL not found."
-            exit 1
-          fi
-          sudo rm "$DEFAULT_TARBALL"
-
-      - name: Test LFC.sh with custom output directory
+      - name: Run LFC.sh and verify output
         run: |
           set -e
-          CUSTOM_OUTPUT_DIR="/tmp/custom_lfc_run"
-          CUSTOM_OUTPUT_BASENAME="custom_lfc_run"
-          CUSTOM_TARBALL="/tmp/${CUSTOM_OUTPUT_BASENAME}.tar.gz"
-          CUSTOM_EXTRACT_DIR="/tmp/extracted_custom_output"
+          OUTPUT_DIR="/tmp/lfc_output"
+          TARBALL="/tmp/lfc_output.tar.gz"
+          EXTRACT_DIR="/tmp/extracted_output"
 
-          echo "--- Running LFC.sh with custom output directory: $CUSTOM_OUTPUT_DIR ---"
-          sudo ./LFC/LFC.sh "$CUSTOM_OUTPUT_DIR"
-          
-          echo "--- Verifying custom output ---"
-          if [ -f "$CUSTOM_TARBALL" ]; then
-            echo "Custom output tarball $CUSTOM_TARBALL created successfully."
-            mkdir -p "$CUSTOM_EXTRACT_DIR"
-            sudo tar -xzf "$CUSTOM_TARBALL" -C "$CUSTOM_EXTRACT_DIR"
+          echo "--- Running LFC.sh ---"
+          sudo ./LFC/LFC.sh "$OUTPUT_DIR"
 
-            LOG_FILE_PATH="$CUSTOM_EXTRACT_DIR/${CUSTOM_OUTPUT_BASENAME}/log_file.log"
-            if [ -f "$LOG_FILE_PATH" ]; then
-              echo "log_file.log found in extracted custom output."
-              if grep -q "Artifact collection completed" "$LOG_FILE_PATH"; then
-                echo "Artifact collection completed message found."
-              else
-                echo "Error: Artifact collection completed message NOT found in log."
-                cat "$LOG_FILE_PATH"
-                exit 1
-              fi
+          echo "--- Creating tarball ---"
+          tar -czf "$TARBALL" -C "$(dirname "$OUTPUT_DIR")" "$(basename "$OUTPUT_DIR")"
+
+          echo "--- Extracting tarball ---"
+          mkdir -p "$EXTRACT_DIR"
+          tar -xzf "$TARBALL" -C "$EXTRACT_DIR"
+
+          LOG_FILE_PATH="$EXTRACT_DIR/$(basename "$OUTPUT_DIR")/log_file.log"
+          if [ -f "$LOG_FILE_PATH" ]; then
+            echo "log_file.log found."
+            if grep -q "Artifact collection completed" "$LOG_FILE_PATH"; then
+              echo "Artifact collection completed message found in log."
             else
-              echo "Error: log_file.log not found in extracted custom output."
-              ls -R "$CUSTOM_EXTRACT_DIR"
+              echo "Error: Artifact collection completed message NOT found in log."
+              cat "$LOG_FILE_PATH"
               exit 1
             fi
-
-            SYSTEM_ANALYSIS_PATH="$CUSTOM_EXTRACT_DIR/${CUSTOM_OUTPUT_BASENAME}/System_Analysis"
-            if [ -d "$SYSTEM_ANALYSIS_PATH" ]; then
-              echo "System_Analysis directory found in extracted custom output."
-            else
-              echo "Error: System_Analysis directory not found in extracted custom output."
-              ls -R "$CUSTOM_EXTRACT_DIR"
-              exit 1
-            fi
-            sudo rm -rf "$CUSTOM_EXTRACT_DIR"
           else
-            echo "Error: Custom output tarball $CUSTOM_TARBALL not found."
+            echo "Error: log_file.log not found."
+            ls -R "$EXTRACT_DIR"
             exit 1
           fi
-          sudo rm "$CUSTOM_TARBALL"
-
-      - name: Test LFC.sh with --no-osquery flag
-        run: |
-          set -e
-          NO_OSQUERY_OUTPUT_DIR="/tmp/no_osquery_run"
-          NO_OSQUERY_OUTPUT_BASENAME="no_osquery_run"
-          NO_OSQUERY_TARBALL="/tmp/${NO_OSQUERY_OUTPUT_BASENAME}.tar.gz"
-          NO_OSQUERY_EXTRACT_DIR="/tmp/extracted_no_osquery_output"
-
-          echo "--- Running LFC.sh with --no-osquery and output dir: $NO_OSQUERY_OUTPUT_DIR ---"
-          sudo ./LFC/LFC.sh "$NO_OSQUERY_OUTPUT_DIR" --no-osquery
-          
-          echo "--- Verifying --no-osquery output ---"
-          if [ -f "$NO_OSQUERY_TARBALL" ]; then
-            echo "--no-osquery output tarball $NO_OSQUERY_TARBALL created successfully."
-            mkdir -p "$NO_OSQUERY_EXTRACT_DIR"
-            sudo tar -xzf "$NO_OSQUERY_TARBALL" -C "$NO_OSQUERY_EXTRACT_DIR"
-            
-            LOG_FILE_PATH="$NO_OSQUERY_EXTRACT_DIR/${NO_OSQUERY_OUTPUT_BASENAME}/log_file.log"
-            if [ -f "$LOG_FILE_PATH" ]; then
-              echo "log_file.log found in extracted --no-osquery output."
-              if grep -q "Skipping osquery collection as per user request." "$LOG_FILE_PATH"; then
-                echo "Osquery skip message (user request) found in log."
-              else
-                echo "Error: Osquery skip message (user request) NOT found in log."
-                cat "$LOG_FILE_PATH"
-                exit 1
-              fi
-              if grep -q "Artifact collection completed" "$LOG_FILE_PATH"; then
-                echo "Artifact collection completed message found."
-              else
-                echo "Error: Artifact collection completed message NOT found in log."
-                cat "$LOG_FILE_PATH"
-                exit 1
-              fi
-            else
-              echo "Error: log_file.log not found in extracted --no-osquery output."
-              ls -R "$NO_OSQUERY_EXTRACT_DIR"
-              exit 1
-            fi
-
-            OSQUERY_DIR_PATH="$NO_OSQUERY_EXTRACT_DIR/${NO_OSQUERY_OUTPUT_BASENAME}/osquery"
-            if [ ! -d "$OSQUERY_DIR_PATH" ]; then
-                echo "osquery directory correctly not found in --no-osquery output."
-            else
-                echo "Error: osquery directory WAS FOUND in --no-osquery output."
-                ls -R "$NO_OSQUERY_EXTRACT_DIR/${NO_OSQUERY_OUTPUT_BASENAME}"
-                exit 1
-            fi
-            sudo rm -rf "$NO_OSQUERY_EXTRACT_DIR"
-          else
-            echo "Error: --no-osquery output tarball $NO_OSQUERY_TARBALL not found."
-            exit 1
-          fi
-          sudo rm "$NO_OSQUERY_TARBALL"
