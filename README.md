@@ -31,63 +31,40 @@ https://github.com/SolitudePy/LinuxForensicsLearn
 - Root privileges (required for accessing protected files and directories)
 - Sufficient disk space for collected artifacts
 - Standard Linux utilities (find, ps, netstat, etc.)
-- `osqueryi` (optional)
+- `osquery` (for osquery integration)
 
 ### Basic Usage
-
-**Run with default output directory (`/tmp/result`) and include osquery:**
-```bash
-sudo ./LFC.SH
 ```
+Usage: ./LFC.sh [OUTPUT_DIRECTORY] [--no-osquery]
+  OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected.
+                    Default: /tmp/result
+  --no-osquery:     Optional. Skip osquery collection.
 
-**Run with custom output directory and include osquery:**
-```bash
-sudo ./LFC.SH /path/to/output/directory
-```
+Examples:
+  ./LFC.sh             # Use default output directory (/tmp/result) and run osquery
+  ./LFC.sh /var/output # Use custom output directory and run osquery
+  ./LFC.sh --no-osquery # Use default output directory and skip osquery
+  ./LFC.sh /var/output --no-osquery # Use custom output directory and skip osquery
 
-**Run with default output directory and skip osquery:**
-```bash
-sudo ./LFC.SH --no-osquery
-```
-
-**Display help:**
-```bash
-./LFC.SH --help
 ```
 
 ### Example Collection Session
 
 ```bash
-# Navigate to the collector directory
-cd /path/to/LinuxForensics/Collector
+# Clone & navigate to the collector directory
+git clone https://github.com/SolitudePy/LFC.git
+cd LFC/LFC
 
 # Make the script executable (if needed)
-chmod +x LFC.SH
+chmod +x LFC.sh
 
 # Run the collector with custom output directory (includes osquery by default)
-sudo ./LFC.SH /forensics/case-001
-
-# The script will create and populate the directory structure:
-# /forensics/case-001/
-# ├── log_file.log
-# ├── osquery/
-# │   ├── users.json
-# │   ├── processes.json
-# │   └── ... (other osquery results)
-# ├── System_Analysis/
-# ├── Process_Analysis/
-# ├── Network_Analysis/
-# ├── File_Analysis/
-# │   └── bodyfile.txt (TSK timeline)
-# ├── User_Analysis/
-# ├── AV_Analysis/
-# └── [copied system files and logs]
-
-# After completion, a compressed archive will be created:
+# After completion, a compressed archive will be created: 
 # /forensics/case-001.tar.gz
+sudo ./LFC.sh /forensics/case-001
 
 # Unarchive results
-tar -xzvf /forensics/case-001.tar.gz -C /tmp
+tar -xzvf /forensics/case-001.tar.gz -C /forensics
 ```
 
 ## License
