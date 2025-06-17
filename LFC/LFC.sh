@@ -114,7 +114,6 @@ SYSTEM_FILES=(
   "/etc/hosts.allow"
   "/etc/hosts.deny"
   "/etc/rc.local"
-  '/etc/rc.d'
   "/etc/nginx"
   "/etc/httpd"
   "/etc/mysql"
