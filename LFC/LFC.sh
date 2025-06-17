@@ -2,25 +2,30 @@
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [OUTPUT_DIRECTORY] [--no-osquery]"
+    echo "Usage: $0 [OUTPUT_DIRECTORY] [--no-osquery] [--tcp-stream IP:PORT]"
     echo "  OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected."
     echo "                    Default: /tmp/result"
     echo "  --no-osquery:     Optional. Skip osquery collection."
+    echo "  --tcp-stream:     Optional. Stream tarball to specified IP:PORT over TCP."
+    echo "                    Format: IP:PORT (e.g., 192.168.1.100:8080)"
     echo ""
     echo "Examples:"
     echo "  $0             # Use default output directory (/tmp/result) and run osquery"
     echo "  $0 /var/output # Use custom output directory and run osquery"
     echo "  $0 --no-osquery # Use default output directory and skip osquery"
     echo "  $0 /var/output --no-osquery # Use custom output directory and skip osquery"
+    echo "  $0 --tcp-stream 192.168.1.100:8080 # Stream artifacts over TCP"
+    echo "  $0 /var/output --no-osquery --tcp-stream 10.0.0.5:9999 # Custom dir, no osquery, TCP stream"
     exit 1
 }
 
 # Parse command line arguments
 SKIP_OSQUERY=false
 TEMP_OUTPUT_DIR=""
+TCP_STREAM=""
 
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case $1 in
         -h|--help)
         usage
         ;;
@@ -28,15 +33,38 @@ for arg in "$@"; do
         SKIP_OSQUERY=true
         shift # Remove --no-osquery from processing
         ;;
-        *)
-        # If an argument is not a flag, and TEMP_OUTPUT_DIR is not set, it's the output directory
-        if [[ ! "$arg" =~ ^- ]] && [ -z "$TEMP_OUTPUT_DIR" ]; then
-            TEMP_OUTPUT_DIR="$arg"
-        # If it's an unknown flag or a second positional argument
-        elif [[ "$arg" =~ ^- ]] || [ -n "$TEMP_OUTPUT_DIR" ]; then
-            echo "Error: Too many arguments provided or invalid argument: $arg"
+        --tcp-stream)
+        # Next argument should be IP:PORT
+        shift
+        TCP_STREAM="$1"
+        if [[ ! "$TCP_STREAM" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
+            echo "Error: Invalid TCP stream format. Expected IP:PORT (e.g., 192.168.1.100:8080)"
             usage
         fi
+        shift
+        ;;
+        --tcp-stream=*)
+        # Handle --tcp-stream=IP:PORT format
+        TCP_STREAM="${1#*=}"
+        if [[ ! "$TCP_STREAM" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
+            echo "Error: Invalid TCP stream format. Expected IP:PORT (e.g., 192.168.1.100:8080)"
+            usage
+        fi
+        shift
+        ;;
+        -*)
+        echo "Error: Unknown option $1"
+        usage
+        ;;
+        *)
+        # If an argument is not a flag, and TEMP_OUTPUT_DIR is not set, it's the output directory
+        if [ -z "$TEMP_OUTPUT_DIR" ]; then
+            TEMP_OUTPUT_DIR="$1"
+        else
+            echo "Error: Too many arguments provided: $1"
+            usage
+        fi
+        shift
         ;;
     esac
 done
@@ -247,6 +275,60 @@ check_if_value_in_blacklist() {
 
     # Target path is not in the list
     return 0  
+}
+
+stream_tarball_over_tcp() {
+    # Streams tarball over TCP to specified IP:PORT
+    # Uses /dev/tcp as primary method, falls back to nc/ncat if available
+    local ip_port="$1"
+    local tarball_path="$2"
+    
+    # Extract IP and port from IP:PORT format
+    local ip="${ip_port%:*}"
+    local port="${ip_port#*:}"
+    
+    write_log "INFO" "Attempting to stream tarball $tarball_path to $ip:$port"
+    
+    # Method 1: Try /dev/tcp (built into bash)
+    if exec 3<> "/dev/tcp/$ip/$port" 2>/dev/null; then
+        write_log "INFO" "Connected using /dev/tcp method"
+        if cat "$tarball_path" >&3 2>/dev/null; then
+            write_log "INFO" "Successfully streamed tarball using /dev/tcp"
+            exec 3>&-  # Close the connection
+            return 0
+        else
+            write_log "ERROR" "Failed to stream data using /dev/tcp"
+            exec 3>&-  # Close the connection
+        fi
+    else
+        write_log "WARNING" "/dev/tcp connection failed, trying fallback methods"
+    fi
+    
+    # Method 2: Try netcat (nc)
+    if command -v nc >/dev/null 2>&1; then
+        write_log "INFO" "Attempting to use nc (netcat)"
+        if cat "$tarball_path" | nc "$ip" "$port" 2>/dev/null; then
+            write_log "INFO" "Successfully streamed tarball using nc"
+            return 0
+        else
+            write_log "ERROR" "Failed to stream using nc"
+        fi
+    fi
+    
+    # Method 3: Try ncat (from nmap)
+    if command -v ncat >/dev/null 2>&1; then
+        write_log "INFO" "Attempting to use ncat"
+        if cat "$tarball_path" | ncat "$ip" "$port" 2>/dev/null; then
+            write_log "INFO" "Successfully streamed tarball using ncat"
+            return 0
+        else
+            write_log "ERROR" "Failed to stream using ncat"
+        fi
+    fi
+    
+    # All methods failed
+    write_log "ERROR" "All TCP streaming methods failed. Tarball remains locally at $tarball_path"
+    return 1
 }
 
 copy_configuration_files() {
@@ -655,7 +737,41 @@ write_log "INFO" "Artifact collection completed in $ELAPSED_TIME seconds. Artifa
 # Create tar archive of the collected artifacts
 OUTPUT_BASENAME=$(basename "$OUTPUT_DIR")
 PARENT_DIR=$(dirname "$OUTPUT_DIR")
-tar -czf "$ZIP_DIR/${OUTPUT_BASENAME}.tar.gz" -C "$PARENT_DIR" "$OUTPUT_BASENAME"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+HOSTNAME=$(hostname -s)
+TARBALL_FILENAME="lfc_${HOSTNAME}_${TIMESTAMP}.tar.gz"
+TARBALL_PATH="$ZIP_DIR/$TARBALL_FILENAME"
+tar -czf "$TARBALL_PATH" -C "$PARENT_DIR" "$OUTPUT_BASENAME"
 
 # Delete uncompressed output directory
 rm -rf "$OUTPUT_DIR"
+
+# Handle TCP streaming if requested
+if [ -n "$TCP_STREAM" ]; then
+    # Create a temporary log file for post-processing operations since original log is now archived
+    TEMP_LOGFILE="$ZIP_DIR/lfc_tcp_streaming.log"
+    
+    # Temporarily redirect write_log to the temp log file
+    ORIGINAL_LOGFILE="$LOGFILE"
+    LOGFILE="$TEMP_LOGFILE"
+    
+    write_log "INFO" "TCP streaming requested to $TCP_STREAM"
+    
+    if stream_tarball_over_tcp "$TCP_STREAM" "$TARBALL_PATH"; then
+        write_log "INFO" "Successfully streamed tarball over TCP. Removing local copy."
+        rm -f "$TARBALL_PATH"
+        write_log "INFO" "Forensic artifacts streamed to $TCP_STREAM and local tarball removed."
+        echo "Forensic artifacts streamed to $TCP_STREAM and local tarball removed."
+        echo "TCP streaming log saved at: $TEMP_LOGFILE"
+    else
+        write_log "ERROR" "TCP streaming failed. Tarball remains at $TARBALL_PATH"
+        write_log "INFO" "Forensic artifacts collection completed. Local tarball saved at $TARBALL_PATH"
+        echo "TCP streaming failed. Tarball remains at $TARBALL_PATH"
+        echo "TCP streaming log saved at: $TEMP_LOGFILE"
+    fi
+    
+    # Restore original logfile variable (though it won't be used again)
+    LOGFILE="$ORIGINAL_LOGFILE"
+else
+    echo "Forensic artifacts collection completed. Tarball saved at $TARBALL_PATH"
+fi
