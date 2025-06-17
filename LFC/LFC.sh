@@ -307,7 +307,7 @@ stream_tarball_over_tcp() {
     # Method 2: Try netcat (nc)
     if command -v nc >/dev/null 2>&1; then
         write_log "INFO" "Attempting to use nc (netcat)"
-        if cat "$tarball_path" | nc "$ip" "$port" 2>/dev/null; then
+        if nc "$ip" "$port" < "$tarball_path" 2>/dev/null; then
             write_log "INFO" "Successfully streamed tarball using nc"
             return 0
         else
@@ -318,7 +318,7 @@ stream_tarball_over_tcp() {
     # Method 3: Try ncat (from nmap)
     if command -v ncat >/dev/null 2>&1; then
         write_log "INFO" "Attempting to use ncat"
-        if cat "$tarball_path" | ncat "$ip" "$port" 2>/dev/null; then
+        if ncat "$ip" "$port" < "$tarball_path" 2>/dev/null; then
             write_log "INFO" "Successfully streamed tarball using ncat"
             return 0
         else
