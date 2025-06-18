@@ -4,13 +4,13 @@
 usage() {
     echo "Usage: $0 [OUTPUT_DIRECTORY] [--no-osquery] [--tcp-stream IP:PORT]"
     echo "  OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected."
-    echo "                    Default: /tmp/result"
+    echo "                    Default: /tmp/lfc_<hostname>_<timestamp>"
     echo "  --no-osquery:     Optional. Skip osquery collection."
     echo "  --tcp-stream:     Optional. Stream tarball to specified IP:PORT over TCP."
     echo "                    Format: IP:PORT (e.g., 192.168.1.100:8080)"
     echo ""
     echo "Examples:"
-    echo "  $0             # Use default output directory (/tmp/result) and run osquery"
+    echo "  $0             # Use default output directory (/tmp/lfc_<hostname>_<timestamp>) and run osquery"
     echo "  $0 /var/output # Use custom output directory and run osquery"
     echo "  $0 --no-osquery # Use default output directory and skip osquery"
     echo "  $0 /var/output --no-osquery # Use custom output directory and skip osquery"
@@ -70,7 +70,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Set output directory (use argument if provided, otherwise default)
-OUTPUT_DIR="${TEMP_OUTPUT_DIR:-/tmp/result}"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+HOSTNAME=$(hostname -s)
+OUTPUT_DIR="${TEMP_OUTPUT_DIR:-/tmp/lfc_${HOSTNAME}_${TIMESTAMP}}"
 
 # Validate output directory path
 if [ -z "$OUTPUT_DIR" ]; then
@@ -97,7 +99,7 @@ USER_ANALYSIS_DIR="$OUTPUT_DIR/User_Analysis"
 FILE_ANALYSIS_DIR="$OUTPUT_DIR/File_Analysis"
 NETWORK_ANALYSIS_DIR="$OUTPUT_DIR/Network_Analysis"
 PROCESS_ANALYSIS_DIR="$OUTPUT_DIR/Process_Analysis"
-OSQUERY_ANALYSIS_DIR="$OUTPUT_DIR/osquery" # New directory for osquery results
+OSQUERY_ANALYSIS_DIR="$OUTPUT_DIR/osquery"
 
 # osquery settings
 OSQUERY_PATH="/usr/bin/osqueryi" # Default path to osqueryi, adjust if needed
@@ -737,9 +739,7 @@ write_log "INFO" "Artifact collection completed in $ELAPSED_TIME seconds. Artifa
 # Create tar archive of the collected artifacts
 OUTPUT_BASENAME=$(basename "$OUTPUT_DIR")
 PARENT_DIR=$(dirname "$OUTPUT_DIR")
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-HOSTNAME=$(hostname -s)
-TARBALL_FILENAME="lfc_${HOSTNAME}_${TIMESTAMP}.tar.gz"
+TARBALL_FILENAME="${OUTPUT_BASENAME}.tar.gz"
 TARBALL_PATH="$ZIP_DIR/$TARBALL_FILENAME"
 tar -czf "$TARBALL_PATH" -C "$PARENT_DIR" "$OUTPUT_BASENAME"
 
