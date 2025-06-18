@@ -2,12 +2,14 @@
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 [OUTPUT_DIRECTORY] [--no-osquery] [--tcp-stream IP:PORT]"
+    echo "Usage: $0 [OUTPUT_DIRECTORY] [--no-osquery] [--tcp-stream IP:PORT] [--osqueryi-path PATH]"
     echo "  OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected."
     echo "                    Default: /tmp/lfc_<hostname>_<timestamp>"
     echo "  --no-osquery:     Optional. Skip osquery collection."
     echo "  --tcp-stream:     Optional. Stream tarball to specified IP:PORT over TCP."
     echo "                    Format: IP:PORT (e.g., 192.168.1.100:8080)"
+    echo "  --osqueryi-path:  Optional. Path to osqueryi binary."
+    echo "                    Default: /usr/bin/osqueryi"
     echo ""
     echo "Examples:"
     echo "  $0             # Use default output directory (/tmp/lfc_<hostname>_<timestamp>) and run osquery"
@@ -16,13 +18,14 @@ usage() {
     echo "  $0 /var/output --no-osquery # Use custom output directory and skip osquery"
     echo "  $0 --tcp-stream 192.168.1.100:8080 # Stream artifacts over TCP"
     echo "  $0 /var/output --no-osquery --tcp-stream 10.0.0.5:9999 # Custom dir, no osquery, TCP stream"
+    echo "  $0 --osqueryi-path /opt/osquery/bin/osqueryi # Use custom osqueryi path"
     exit 1
 }
 
-# Parse command line arguments
 SKIP_OSQUERY=false
 TEMP_OUTPUT_DIR=""
 TCP_STREAM=""
+TEMP_OSQUERYI_PATH=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -31,10 +34,10 @@ while [[ $# -gt 0 ]]; do
         ;;
         --no-osquery)
         SKIP_OSQUERY=true
-        shift # Remove --no-osquery from processing
+        shift
         ;;
         --tcp-stream)
-        # Next argument should be IP:PORT
+        
         shift
         TCP_STREAM="$1"
         if [[ ! "$TCP_STREAM" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
@@ -49,6 +52,25 @@ while [[ $# -gt 0 ]]; do
         if [[ ! "$TCP_STREAM" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
             echo "Error: Invalid TCP stream format. Expected IP:PORT (e.g., 192.168.1.100:8080)"
             usage
+        fi
+        shift
+        ;;
+        --osqueryi-path)
+        # Next argument should be the path to osqueryi
+        shift
+        TEMP_OSQUERYI_PATH="$1"
+        if [ ! -x "$TEMP_OSQUERYI_PATH" ]; then
+            echo "Warning: osqueryi binary not found or not executable at $TEMP_OSQUERYI_PATH"
+            echo "Continuing anyway - will be checked again during osquery collection phase"
+        fi
+        shift
+        ;;
+        --osqueryi-path=*)
+        # Handle --osqueryi-path=PATH format
+        TEMP_OSQUERYI_PATH="${1#*=}"
+        if [ ! -x "$TEMP_OSQUERYI_PATH" ]; then
+            echo "Warning: osqueryi binary not found or not executable at $TEMP_OSQUERYI_PATH"
+            echo "Continuing anyway - will be checked again during osquery collection phase"
         fi
         shift
         ;;
@@ -74,6 +96,9 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 HOSTNAME=$(hostname -s)
 OUTPUT_DIR="${TEMP_OUTPUT_DIR:-/tmp/lfc_${HOSTNAME}_${TIMESTAMP}}"
 
+# Set osqueryi path (use argument if provided, otherwise default)
+OSQUERYI_PATH="${TEMP_OSQUERYI_PATH:-/usr/bin/osqueryi}"
+
 # Validate output directory path
 if [ -z "$OUTPUT_DIR" ]; then
     echo "Error: Output directory cannot be empty."
@@ -90,7 +115,7 @@ fi
 # Start time
 START_TIME=$(date +%s)
 
-# Constant Variables (derived from OUTPUT_DIR)
+# Constant Variables (derived from $OUTPUT_DIR)
 ZIP_DIR="$(dirname "$OUTPUT_DIR")"
 LOGFILE="$OUTPUT_DIR/log_file.log"
 SYSTEM_ANALYSIS="$OUTPUT_DIR/System_Analysis"
@@ -102,7 +127,6 @@ PROCESS_ANALYSIS_DIR="$OUTPUT_DIR/Process_Analysis"
 OSQUERY_ANALYSIS_DIR="$OUTPUT_DIR/osquery"
 
 # osquery settings
-OSQUERY_PATH="/usr/bin/osqueryi" # Default path to osqueryi, adjust if needed
 OSQUERY_OUTPUT_FORMAT="json" # Output format for osquery: json, csv, etc.
 
 recent_modified_files_threshold=24 # Time threshold in hours for recent modified files.
@@ -602,9 +626,9 @@ run_osquery_collection() {
         return
     fi
 
-    if ! command -v "$OSQUERY_PATH" &> /dev/null; then
-        write_log "WARNING" "osqueryi not found at $OSQUERY_PATH. Skipping osquery collection."
-        write_log "WARNING" "Please install osquery or adjust OSQUERY_PATH variable in the script."
+    if ! command -v "$OSQUERYI_PATH" &> /dev/null; then
+        write_log "WARNING" "osqueryi not found at $OSQUERYI_PATH. Skipping osquery collection."
+        write_log "WARNING" "Please install osquery or use --osqueryi-path to specify the correct path."
         return
     fi
 
@@ -655,7 +679,7 @@ run_osquery_collection() {
       outfile="$OSQUERY_ANALYSIS_DIR/${filename_base}.$OSQUERY_OUTPUT_FORMAT"
       write_log "INFO" "Running osquery: $query -> $outfile"
       # Redirect osqueryi stderr to the main log file
-      if echo "$query" | "$OSQUERY_PATH" --"$OSQUERY_OUTPUT_FORMAT" > "$outfile" 2>> "$LOGFILE"; then
+      if echo "$query" | "$OSQUERYI_PATH" --"$OSQUERY_OUTPUT_FORMAT" > "$outfile" 2>> "$LOGFILE"; then
         write_log "INFO" "Successfully executed: $query"
       else
         write_log "ERROR" "Error executing osquery: $query. Exit code: $?. Output file $outfile may be empty or incomplete. Check $LOGFILE for osquery error messages."
