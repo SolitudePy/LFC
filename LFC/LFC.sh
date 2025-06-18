@@ -748,30 +748,14 @@ rm -rf "$OUTPUT_DIR"
 
 # Handle TCP streaming if requested
 if [ -n "$TCP_STREAM" ]; then
-    # Create a temporary log file for post-processing operations since original log is now archived
-    TEMP_LOGFILE="$ZIP_DIR/lfc_tcp_streaming.log"
-    
-    # Temporarily redirect write_log to the temp log file
-    ORIGINAL_LOGFILE="$LOGFILE"
-    LOGFILE="$TEMP_LOGFILE"
-    
-    write_log "INFO" "TCP streaming requested to $TCP_STREAM"
+    echo "TCP streaming requested to $TCP_STREAM"
     
     if stream_tarball_over_tcp "$TCP_STREAM" "$TARBALL_PATH"; then
-        write_log "INFO" "Successfully streamed tarball over TCP. Removing local copy."
         rm -f "$TARBALL_PATH"
-        write_log "INFO" "Forensic artifacts streamed to $TCP_STREAM and local tarball removed."
         echo "Forensic artifacts streamed to $TCP_STREAM and local tarball removed."
-        echo "TCP streaming log saved at: $TEMP_LOGFILE"
     else
-        write_log "ERROR" "TCP streaming failed. Tarball remains at $TARBALL_PATH"
-        write_log "INFO" "Forensic artifacts collection completed. Local tarball saved at $TARBALL_PATH"
         echo "TCP streaming failed. Tarball remains at $TARBALL_PATH"
-        echo "TCP streaming log saved at: $TEMP_LOGFILE"
     fi
-    
-    # Restore original logfile variable (though it won't be used again)
-    LOGFILE="$ORIGINAL_LOGFILE"
 else
     echo "Forensic artifacts collection completed. Tarball saved at $TARBALL_PATH"
 fi
