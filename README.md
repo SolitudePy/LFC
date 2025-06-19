@@ -23,6 +23,7 @@ https://github.com/SolitudePy/LinuxForensicsLearn
 - ⏱️ **Timeline Generation**: Creates a TSK v3 compatible bodyfile for chronological event analysis.
 - 🔒 **Executable Integrity Verification**: Performs SHA256 hashing of all executable files to ensure integrity.
 - 🛡️ **Osquery Integration**: Leverages [osquery](https://github.com/osquery/osquery) for flexible and structured system data collection.
+- 📡 **TCP Streaming**: Stream collected artifacts directly to a remote destination over TCP, eliminating the need for local storage.
 
 
 ## Quick Usage
@@ -31,21 +32,28 @@ https://github.com/SolitudePy/LinuxForensicsLearn
 - Root privileges (required for accessing protected files and directories)
 - Sufficient disk space for collected artifacts
 - Standard Linux utilities (find, ps, netstat, etc.)
-- `osquery` (for osquery integration)
+- `osqueryi` (for osquery integration, optional)
+- Network connectivity (for TCP streaming feature, optional)
 
 ### Basic Usage
 ```
-Usage: ./LFC.sh [OUTPUT_DIRECTORY] [--no-osquery]
+Usage: ./LFC/LFC.sh [OUTPUT_DIRECTORY] [--no-osquery] [--tcp-stream IP:PORT] [--osqueryi-path PATH]
   OUTPUT_DIRECTORY: Optional. Directory where forensic artifacts will be collected.
-                    Default: /tmp/result
+                    Default: /tmp/lfc_<hostname>_<timestamp>
   --no-osquery:     Optional. Skip osquery collection.
+  --tcp-stream:     Optional. Stream tarball to specified IP:PORT over TCP.
+                    Format: IP:PORT (e.g., 192.168.1.100:8080)
+  --osqueryi-path:  Optional. Path to osqueryi binary.
+                    Default: /usr/bin/osqueryi
 
 Examples:
-  ./LFC.sh             # Use default output directory (/tmp/result) and run osquery
-  ./LFC.sh /var/output # Use custom output directory and run osquery
-  ./LFC.sh --no-osquery # Use default output directory and skip osquery
-  ./LFC.sh /var/output --no-osquery # Use custom output directory and skip osquery
-
+  ./LFC/LFC.sh             # Use default output directory (/tmp/lfc_<hostname>_<timestamp>) and run osquery
+  ./LFC/LFC.sh /var/output # Use custom output directory and run osquery
+  ./LFC/LFC.sh --no-osquery # Use default output directory and skip osquery
+  ./LFC/LFC.sh /var/output --no-osquery # Use custom output directory and skip osquery
+  ./LFC/LFC.sh --tcp-stream 192.168.1.100:8080 # Stream artifacts over TCP
+  ./LFC/LFC.sh /var/output --no-osquery --tcp-stream 10.0.0.5:9999 # Custom dir, no osquery, TCP stream
+  ./LFC/LFC.sh --osqueryi-path /opt/osquery/bin/osqueryi # Use custom osqueryi path
 ```
 
 ### Example Collection Session
@@ -58,13 +66,28 @@ cd LFC/LFC
 # Make the script executable (if needed)
 chmod +x LFC.sh
 
-# Run the collector with custom output directory (includes osquery by default)
+# Standard collection with custom output directory
 # After completion, a compressed archive will be created: 
-# /forensics/case-001.tar.gz
+# /forensics/lfc_hostname_timestamp.tar.gz
 sudo ./LFC.sh /forensics/case-001
 
-# Unarchive results
+# Extract results locally
 tar -xzvf /forensics/case-001.tar.gz -C /forensics
+```
+
+#### Setting up a TCP Listener
+
+On your analysis machine, set up a listener to receive the streamed data:
+
+```bash
+# Using netcat to receive the tarball
+nc -l -p 8080 > forensic_artifacts.tar.gz
+
+# Or using socat for more advanced options
+socat TCP-LISTEN:8080,fork file:forensic_artifacts.tar.gz
+
+# Using Python for a simple HTTP server (alternative approach)
+python3 -m http.server 8080
 ```
 
 ## License
