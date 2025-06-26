@@ -68,11 +68,11 @@ chmod +x LFC.sh
 
 # Standard collection with custom output directory
 # After completion, a compressed archive will be created: 
-# /forensics/lfc_hostname_timestamp.tar.gz
-sudo ./LFC.sh /forensics/case-001
+# /var/case-001.tar.gz
+sudo ./LFC.sh /var/case-001
 
 # Extract results locally
-tar -xzvf /forensics/case-001.tar.gz -C /forensics
+tar -xzvf /var/case-001.tar.gz -C /var
 ```
 
 #### Setting up a TCP Listener
@@ -88,6 +88,13 @@ socat TCP-LISTEN:8080,fork file:forensic_artifacts.tar.gz
 
 # Using Python for a simple HTTP server (alternative approach)
 python3 -m http.server 8080
+```
+
+#### Integrating osquery
+```bash
+1. Download the latest release from https://github.com/osquery/osquery
+2. Install osquery e.g via rpm
+3. Copy osqueryi to your desired location to work standalone along with LFC
 ```
 
 ## License
