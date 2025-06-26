@@ -1,4 +1,4 @@
-# 🕵️ Linux Forensics Collector
+# 🕵️ LFC (Linux Forensic Collector)
 
 ## Background
 
